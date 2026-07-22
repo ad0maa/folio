@@ -1,0 +1,40 @@
+---
+import { CONTACT } from "../lib/site";
+---
+
+<section class="mx-auto max-w-5xl px-6 pb-20 pt-16 sm:pb-28 sm:pt-24">
+  <p
+    class="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.15em] text-signal"
+  >
+    <span aria-hidden="true">&#9679;</span>
+    {CONTACT.availability} &middot; {CONTACT.location} &middot; {CONTACT.workPreference}
+  </p>
+
+  <h1
+    class="mt-6 max-w-3xl font-display text-4xl font-semibold leading-[1.1] text-paper sm:text-6xl"
+  >
+    Full-stack engineer. I ship web and mobile apps end to end, from data
+    model to production.
+  </h1>
+
+  <p class="mt-6 max-w-2xl text-lg leading-relaxed text-muted sm:text-xl">
+    Three years building multi-tenant SaaS, payments infrastructure, and
+    mobile apps end to end. Most of that work is commercial and stays
+    private. Below are a few things I'm building in the open instead.
+  </p>
+
+  <div class="mt-10 flex flex-wrap gap-4">
+    <a
+      href="#projects"
+      class="rounded bg-signal px-5 py-3 font-mono text-sm text-ink transition-opacity hover:opacity-90"
+    >
+      View projects
+    </a>
+    <a
+      href="#contact"
+      class="rounded border border-panel-line px-5 py-3 font-mono text-sm text-paper transition-colors hover:border-trace"
+    >
+      Get in touch
+    </a>
+  </div>
+</section>
