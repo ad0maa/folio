@@ -1,0 +1,46 @@
+---
+import { CONTACT, SITE, SHOW_RESUME } from "../lib/site";
+
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-panel-line">
+  <div
+    class="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-8 text-xs text-muted sm:flex-row sm:items-center sm:justify-between"
+  >
+    <p class="font-mono">
+      &copy; {year} Adam Tunchay. Built with Astro.
+      {
+        SITE.repoUrl && (
+          <>
+            {" "}
+            <a
+              href={SITE.repoUrl}
+              class="transition-colors hover:text-trace"
+            >
+              Source &rarr;
+            </a>
+          </>
+        )
+      }
+    </p>
+    <div class="flex flex-wrap gap-4 font-mono">
+      <a href={CONTACT.github} class="transition-colors hover:text-trace"
+        >GitHub</a
+      >
+      <a href={CONTACT.linkedin} class="transition-colors hover:text-trace"
+        >LinkedIn</a
+      >
+      {
+        SHOW_RESUME && (
+          <a
+            href={CONTACT.resumeHref}
+            class="transition-colors hover:text-trace"
+          >
+            Résumé
+          </a>
+        )
+      }
+    </div>
+  </div>
+</footer>
