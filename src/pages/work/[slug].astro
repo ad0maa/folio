@@ -1,0 +1,78 @@
+---
+import { getCollection, render } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+import Tag from "../../components/Tag.astro";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("caseStudies");
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { title, role, timeframe, summary, stack, client, links } = entry.data;
+const { Content } = await render(entry);
+---
+
+<Layout title={title} description={summary}>
+  <article class="mx-auto max-w-3xl px-6 py-16 sm:py-20">
+    <a
+      href="/#work"
+      class="font-mono text-xs text-muted transition-colors hover:text-trace"
+    >
+      &larr; Back to work
+    </a>
+
+    <header class="mt-6 border-b border-panel-line pb-10">
+      <h1 class="font-display text-3xl font-semibold text-paper sm:text-5xl">
+        {title}
+      </h1>
+      <p class="mt-4 text-lg text-muted sm:text-xl">{summary}</p>
+
+      <dl
+        class="mt-8 grid grid-cols-2 gap-x-6 gap-y-4 font-mono text-xs sm:grid-cols-4"
+      >
+        <div>
+          <dt class="uppercase tracking-[0.1em] text-muted">Role</dt>
+          <dd class="mt-1 text-paper">{role}</dd>
+        </div>
+        <div>
+          <dt class="uppercase tracking-[0.1em] text-muted">Timeframe</dt>
+          <dd class="mt-1 text-paper">{timeframe}</dd>
+        </div>
+        {
+          client && (
+            <div>
+              <dt class="uppercase tracking-[0.1em] text-muted">Client</dt>
+              <dd class="mt-1 text-paper">{client}</dd>
+            </div>
+          )
+        }
+        {
+          links.length > 0 && (
+            <div>
+              <dt class="uppercase tracking-[0.1em] text-muted">Links</dt>
+              <dd class="mt-1 flex flex-col gap-1">
+                {links.map((link) => (
+                  <a href={link.url} class="text-trace hover:text-signal">
+                    {link.label}
+                  </a>
+                ))}
+              </dd>
+            </div>
+          )
+        }
+      </dl>
+
+      <div class="mt-6 flex flex-wrap gap-2">
+        {stack.map((item) => <Tag label={item} />)}
+      </div>
+    </header>
+
+    <div class="case-body">
+      <Content />
+    </div>
+  </article>
+</Layout>

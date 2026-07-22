@@ -1,0 +1,53 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Tag from "./Tag.astro";
+
+interface Props {
+  entry: CollectionEntry<"projects">;
+}
+const { entry } = Astro.props;
+const { title, status, summary, stack, repoUrl, liveUrl } = entry.data;
+
+const statusStyle: Record<typeof status, string> = {
+  live: "text-trace",
+  "in-progress": "text-signal",
+  archived: "text-muted",
+};
+
+const statusLabel: Record<typeof status, string> = {
+  live: "Live",
+  "in-progress": "In progress",
+  archived: "Archived",
+};
+---
+
+<div
+  class="flex flex-col gap-4 rounded-lg border border-panel-line bg-panel p-6 sm:p-8"
+>
+  <div class="flex items-baseline justify-between gap-4">
+    <h3 class="font-display text-xl font-semibold text-paper">{title}</h3>
+    <span class={`shrink-0 font-mono text-xs ${statusStyle[status]}`}>
+      &#9679; {statusLabel[status]}
+    </span>
+  </div>
+  <p class="text-sm leading-relaxed text-muted sm:text-base">{summary}</p>
+  <div class="flex flex-wrap gap-2">
+    {stack.slice(0, 6).map((item) => <Tag label={item} />)}
+  </div>
+  <div class="mt-auto flex gap-4 pt-2 font-mono text-xs">
+    {
+      liveUrl && (
+        <a href={liveUrl} class="text-trace transition-colors hover:text-paper">
+          Live demo &rarr;
+        </a>
+      )
+    }
+    {
+      repoUrl && (
+        <a href={repoUrl} class="text-muted transition-colors hover:text-paper">
+          Repo &rarr;
+        </a>
+      )
+    }
+  </div>
+</div>
