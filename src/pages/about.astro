@@ -8,74 +8,76 @@ import { CONTACT, SHOW_RESUME } from "../lib/site";
   title="About"
   description="From ten years in broadcast television to full stack engineering: what I've built and what I'm looking for."
 >
-  <article class="mx-auto max-w-3xl px-6 py-16 sm:py-20">
-    <h1 class="font-display text-4xl font-semibold text-paper sm:text-5xl">
-      About
-    </h1>
+  <article class="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+    <div class="max-w-3xl">
+      <h1 class="font-display text-4xl font-semibold text-paper sm:text-5xl">
+        About
+      </h1>
 
-    <div class="case-body mt-10">
-      <p>
-        I spent close to ten years in broadcast television before I wrote a
-        line of production code, as a camera assistant and then operator.
-        That background is part of why I care about shipping things that
-        actually work under real conditions, not just in a demo.
-      </p>
+      <div class="case-body mt-10">
+        <p>
+          I spent close to ten years in broadcast television before I wrote a
+          line of production code, as a camera assistant and then operator.
+          That background is part of why I care about shipping things that
+          actually work under real conditions, not just in a demo.
+        </p>
 
-      <h2>What I've built</h2>
-      <p>
-        In my previous role, I built and shipped a range of production
-        systems, including:
-      </p>
-      <ul>
-        <li>
-          A multi-tenant registration and licensing platform for a
-          motorsport governing body, with role-based access and a
-          configurable payments fee engine.
-        </li>
-        <li>
-          A ticketing and point-of-sale platform running across multiple
-          live venues, with Stripe, digital wallet, and dedicated card
-          terminal integration, including allocated seating for large
-          venues.
-        </li>
-        <li>
-          A booking and subscription app for a gym, handling class bookings
-          and recurring memberships.
-        </li>
-        <li>
-          A tablet-based system for an education centre, migrated off an
-          unsupported legacy stack onto one a full team could maintain.
-        </li>
-        <li>
-          Platform and database migrations across hosting providers, with
-          measurable cost savings.
-        </li>
-        <li>
-          AI-assisted development workflows that changed where a small
-          team's actual bottleneck sat.
-        </li>
-      </ul>
+        <h2>What I've built</h2>
+        <p>
+          In my previous role, I built and shipped a range of production
+          systems, including:
+        </p>
+        <ul>
+          <li>
+            A multi-tenant registration and licensing platform for a
+            motorsport governing body, with role-based access and a
+            configurable payments fee engine.
+          </li>
+          <li>
+            A ticketing and point-of-sale platform running across multiple
+            live venues, with Stripe, digital wallet, and dedicated card
+            terminal integration, including allocated seating for large
+            venues.
+          </li>
+          <li>
+            A booking and subscription app for a gym, handling class bookings
+            and recurring memberships.
+          </li>
+          <li>
+            A tablet-based system for an education centre, migrated off an
+            unsupported legacy stack onto one a full team could maintain.
+          </li>
+          <li>
+            Platform and database migrations across hosting providers, with
+            measurable cost savings.
+          </li>
+          <li>
+            AI-assisted development workflows that changed where a small
+            team's actual bottleneck sat.
+          </li>
+        </ul>
 
-      <h2>What I'm looking for</h2>
-      <p>
-        A mid-level engineering role, Melbourne hybrid or remote, available
-        now. Most of what I've shipped has been full stack, web and mobile,
-        but I'm equally comfortable owning a backend system or a front-end
-        build on its own. The range just means I can plug in wherever a team
-        needs me.
-      </p>
+        <h2>What I'm looking for</h2>
+        <p>
+          A mid-level engineering role, Melbourne hybrid or remote, available
+          now. Most of what I've shipped has been full stack, web and mobile,
+          but I'm equally comfortable owning a backend system or a front-end
+          build on its own. The range just means I can plug in wherever a
+          team needs me.
+        </p>
+      </div>
+
+      {
+        SHOW_RESUME && (
+          <a
+            href={CONTACT.resumeHref}
+            class="mt-10 inline-block rounded bg-signal px-5 py-3 font-mono text-sm text-ink transition-opacity hover:opacity-90"
+          >
+            Download résumé (PDF)
+          </a>
+        )
+      }
     </div>
-
-    {
-      SHOW_RESUME && (
-        <a
-          href={CONTACT.resumeHref}
-          class="mt-10 inline-block rounded bg-signal px-5 py-3 font-mono text-sm text-ink transition-opacity hover:opacity-90"
-        >
-          Download résumé (PDF)
-        </a>
-      )
-    }
   </article>
 
   <div class="border-t border-panel-line">
