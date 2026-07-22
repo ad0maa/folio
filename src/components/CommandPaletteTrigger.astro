@@ -1,0 +1,67 @@
+---
+import { getCollection } from "astro:content";
+import CommandPalette from "./CommandPalette";
+import { CONTACT, SHOW_RESUME } from "../lib/site";
+
+const projects = (await getCollection("projects"))
+  .sort((a, b) => a.data.order - b.data.order)
+  .map((entry) => ({
+    group: "Projects",
+    label: entry.data.title,
+    hint: entry.data.summary,
+    href: `/#projects`,
+  }));
+
+const items = [
+  { group: "Go to", label: "Home", hint: "Top of page", href: "/" },
+  {
+    group: "Go to",
+    label: "Projects",
+    hint: "Side projects",
+    href: "/#projects",
+  },
+  { group: "Go to", label: "Skills", hint: "Stack", href: "/#skills" },
+  { group: "Go to", label: "About", hint: "Longer bio", href: "/about" },
+  {
+    group: "Go to",
+    label: "Contact",
+    hint: "Get in touch",
+    href: "/#contact",
+  },
+  ...projects,
+  {
+    group: "Elsewhere",
+    label: "GitHub",
+    hint: CONTACT.githubLabel,
+    href: CONTACT.github,
+    external: true,
+  },
+  {
+    group: "Elsewhere",
+    label: "LinkedIn",
+    hint: CONTACT.linkedinLabel,
+    href: CONTACT.linkedin,
+    external: true,
+  },
+  ...(SHOW_RESUME
+    ? [
+        {
+          group: "Elsewhere",
+          label: "Résumé",
+          hint: "Download PDF",
+          href: CONTACT.resumeHref,
+          external: true,
+        },
+      ]
+    : []),
+  {
+    group: "Elsewhere",
+    label: "Copy email address",
+    hint: CONTACT.email,
+    href: "",
+    copyEmail: true,
+  },
+];
+---
+
+<CommandPalette client:idle items={items} email={CONTACT.email} />
