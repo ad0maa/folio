@@ -6,7 +6,8 @@ interface Props {
   entry: CollectionEntry<"projects">;
 }
 const { entry } = Astro.props;
-const { title, status, summary, stack, repoUrl, liveUrl } = entry.data;
+const { title, status, summary, stack, repoUrl, liveUrl, mobileRepoUrl } =
+  entry.data;
 
 const statusStyle: Record<typeof status, string> = {
   live: "text-trace",
@@ -46,6 +47,13 @@ const statusLabel: Record<typeof status, string> = {
       repoUrl && (
         <a href={repoUrl} class="text-muted transition-colors hover:text-paper">
           Repo &rarr;
+        </a>
+      )
+    }
+    {
+      mobileRepoUrl && (
+        <a href={mobileRepoUrl} class="text-muted transition-colors hover:text-paper">
+          Mobile Repo &rarr;
         </a>
       )
     }
