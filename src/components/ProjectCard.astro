@@ -35,18 +35,9 @@ const statusLabel: Record<typeof status, string> = {
 >
   <div class="flex items-baseline justify-between gap-4">
     <h3 class="font-display text-xl font-semibold text-paper">{title}</h3>
-    <div class="flex shrink-0 items-center gap-2">
-      {
-        aiAssisted && (
-          <span class="rounded-full border border-panel-line px-2.5 py-1 font-mono text-[11px] text-trace">
-            AI-assisted
-          </span>
-        )
-      }
-      <span class={`font-mono text-xs ${statusStyle[status]}`}>
-        &#9679; {statusLabel[status]}
-      </span>
-    </div>
+    <span class={`shrink-0 font-mono text-xs ${statusStyle[status]}`}>
+      &#9679; {statusLabel[status]}
+    </span>
   </div>
   <p class="text-sm leading-relaxed text-muted sm:text-base">{summary}</p>
   {
