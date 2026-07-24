@@ -6,8 +6,16 @@ interface Props {
   entry: CollectionEntry<"projects">;
 }
 const { entry } = Astro.props;
-const { title, status, summary, stack, repoUrl, liveUrl, mobileRepoUrl } =
-  entry.data;
+const {
+  title,
+  status,
+  summary,
+  stack,
+  repoUrl,
+  liveUrl,
+  mobileRepoUrl,
+  aiAssisted,
+} = entry.data;
 
 const statusStyle: Record<typeof status, string> = {
   live: "text-trace",
@@ -32,6 +40,11 @@ const statusLabel: Record<typeof status, string> = {
     </span>
   </div>
   <p class="text-sm leading-relaxed text-muted sm:text-base">{summary}</p>
+  {
+    aiAssisted && (
+      <p class="text-xs italic leading-relaxed text-muted/80">{aiAssisted}</p>
+    )
+  }
   <div class="flex flex-wrap gap-2">
     {stack.slice(0, 6).map((item) => <Tag label={item} />)}
   </div>

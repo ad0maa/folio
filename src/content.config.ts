@@ -29,6 +29,7 @@ const projects = defineCollection({
     repoUrl: z.string().url().optional(),
     liveUrl: z.string().url().optional(),
     mobileRepoUrl: z.string().url().optional(),
+    aiAssisted: z.string().optional(),
     order: z.number(),
   }),
 });

@@ -57,6 +57,6 @@ export const SKILLS = [
   },
   {
     label: "Currently learning",
-    items: ["Django / DRF", "Drizzle", "Next.js"],
+    items: [".NET / ASP.NET Core", "Drizzle", "Next.js"],
   },
 ] as const;
