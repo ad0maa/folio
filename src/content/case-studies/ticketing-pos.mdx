@@ -1,0 +1,54 @@
+---
+title: "Ticketing and point-of-sale platform"
+role: "Full-stack engineer"
+timeframe: "2023–2026"
+summary: "One multi-tenant codebase covering online ticket sales with allocated seating, digital wallet passes, and a React Native point-of-sale app for door scanning, bar and merch, shipped to both app stores and used at live venues."
+stack:
+  [
+    "RedwoodJS",
+    "React Native",
+    "Expo",
+    "GraphQL",
+    "Prisma",
+    "PostgreSQL",
+    "Stripe",
+    "Apple Wallet",
+    "Google Wallet",
+  ]
+featured: true
+order: 2
+links: []
+---
+
+## Problem / context
+
+Venues needed two things that usually get built as two separate systems: online ticket sales, and in-person point of sale for door entry, bar and merch on event night. Building a bespoke system per venue was not sustainable, because every venue has different seating, different staff and different hardware on site, while the underlying problem is the same each time.
+
+The goal was one codebase serving multiple venues as tenants, covering online checkout through to a member of door staff scanning a ticket and taking a card payment on site.
+
+## Approach
+
+A single RedwoodJS backend serves everything, with each venue scoped as a tenant across events, seating and sales. The same GraphQL API backs both the web checkout and the React Native companion app used by on-site staff, so ticket state (sold, scanned, refunded) is never split across two systems that can disagree with each other.
+
+Allocated grandstand seating is the part that has no margin for error. Overselling a seat is the one thing you cannot do at a ticketed event, and multiple customers will try to buy the same seat at the same moment.
+
+## Architecture
+
+Per-event seat availability is modelled as its own record with a status, separate from the physical seat, so the same venue map can be reused event after event. When a customer selects seats, the claim happens inside a database transaction that re-checks each seat is still available before flipping it to reserved, so the check and the write cannot be split by a race. Reservations carry a timestamp and expire after ten minutes, swept by a cleanup job, which means abandoned carts release their seats without anyone intervening. The seat map itself uses a raw SQL aggregate to count availability per section rather than loading thousands of seat rows into memory.
+
+Online buyers go through Stripe checkout and get a wallet pass with their ticket. On the Apple side I built pass delivery end to end: generating and signing PKPass files, storing the signing certificates securely in S3 and caching them, and embedding a QR barcode of the ticket number. Google Wallet had been roughed in as a proof of concept by a colleague, and I took it the rest of the way: per-event pass classes created and reused, a pass object per ticket, and the "Add to Google Wallet" link as an RS256-signed JWT. Both are wired into the SendGrid ticket emails, with backfill scripts for tickets issued before the feature existed.
+
+The React Native app authenticates staff per venue and covers door scanning, bar and merch sales, and card and cash payments on site. It shipped to both the Apple App Store and Google Play. Card-present payments on dedicated ANZ Worldline terminal hardware are covered in a [separate case study](/work/payment-terminal).
+
+## Key decisions
+
+1. **One shared codebase for every venue, not a deployment per venue.** Much lower ongoing operational overhead, but it forced the event and seating model to be general enough for venues that look nothing alike, from day one rather than retrofitted.
+2. **Pessimistic, short-lived seat reservations over optimistic checkout.** A small amount of checkout friction in exchange for never double-selling a seat, which is the failure mode that actually costs a venue's trust. For extreme contention the next step is row-level locking or a queue; at this volume the transactional re-check is the right amount of machinery.
+3. **Availability as a separate per-event record, not a flag on the seat.** Slightly more schema, in exchange for reusable venue maps and a clean place to hang reservation expiry.
+4. **Raw SQL for the seat map aggregate.** Dropping out of the ORM for one query, because a large venue's map should not need thousands of rows in memory to draw a section as "12 available".
+5. **React Native over a browser-based point of sale.** The door app needed reliable camera access, wallet integration and native payment SDK access, which a web app could not guarantee on venue hardware.
+6. **Finishing a colleague's proof of concept instead of restarting it.** A rough spike that already proved the approach was worth more than a clean start, and it got wallet passes to customers sooner.
+
+## Outcome
+
+Live at multiple venues and shipped to both app stores, with staff running door, bar and merch on it during real events. Online sales, wallet passes, allocated seating and on-site payments all run through one system instead of three tools stitched together per venue. I deployed on site and trained staff myself, which surfaced interface problems, like ambiguous scan states, that would have stayed invisible from a desk.

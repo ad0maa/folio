@@ -1,0 +1,36 @@
+---
+title: "AI-assisted development workflows"
+role: "Full-stack engineer"
+timeframe: "2025–2026"
+summary: "Moved a small team from ad-hoc AI use to AI inside the actual delivery workflow: a Jira transition that fires a GitHub Action, runs an agent against the repo with the ticket's context, and opens a scoped pull request."
+stack: ["Claude Code", "GitHub Actions", "Jira", "TypeScript", "CI/CD"]
+featured: true
+order: 4
+links: []
+---
+
+## Problem / context
+
+The team was already using AI coding tools, individually and ad hoc. Output quality depended on who was using it and how, none of it was wired into how tickets actually moved across the board, and nothing anyone learned about prompting a codebase was shared. Meanwhile throughput was capped by implementation time on tickets that were well understood but still took real hours: exactly the work that suits automation and does not suit pasting into a chat window.
+
+## Approach
+
+Rather than encourage better individual habits, I built a standard entry point. Moving a Jira ticket into an "Implement with Claude" state triggers a GitHub Action. The action pulls the ticket's context from Jira, checks out the repo, runs Claude Code against a prompt scoped to that ticket, and opens a pull request referencing it. The team gets a notification with the ticket and the pull request linked together.
+
+The second half was ticket quality, because faster implementation only helps if what feeds it is actually ready to implement. I built custom commands that generate well-scoped tickets grounded in the repo, referencing the relevant files and the existing patterns, instead of a vague description that needs a round of clarification before anyone can start.
+
+## Architecture
+
+The GitHub Action runs non-interactively. A Jira state change triggers the workflow, secrets are scoped narrowly to what the run needs, the agent runs against the checked-out repo with the ticket's context injected into the prompt, and the output is a pull request opened against that ticket rather than a chat transcript somebody has to translate into code by hand. The ticket-generation tooling runs the other direction, reading the repo to ground a new ticket in what is actually there before it enters the queue.
+
+## Key decisions
+
+1. **Trigger from the Jira workflow the team already had.** Adoption did not depend on anyone remembering a new tool, because it rode along with a ritual that already existed.
+2. **Scope each run to one ticket, not a general assistant session.** Output stays pull-request sized and reviewable instead of sprawling into changes nobody wants to read.
+3. **Invest in ticket writing, not just implementation.** Once implementation sped up, badly scoped tickets became the real constraint, so it was worth solving before it bit.
+4. **No auto-merge, humans at review and UAT.** The tool is leverage on implementation time, not a substitute for judgment about what ships.
+5. **Build it for the team, not for my own workflow.** It had to survive people who did not build it, which shaped how much context each run needed and how the pull requests were presented.
+
+## Outcome
+
+The bottleneck moved from implementation to pull-request review and user acceptance testing, which is a much better place for it to sit. Just as usefully, the team ended up with a repeatable pattern for using AI day to day instead of everyone independently finding their own way to the same chat window.

@@ -1,0 +1,46 @@
+---
+title: "Legacy migration: education centre tablet platform"
+role: "Full-stack engineer, sole developer"
+timeframe: "2023–2025"
+summary: "Took over a PHP and Flutter system that only one developer could safely touch, rebuilt the backend as a GraphQL API with a web app for educators, and moved the tablet app to React Native so the whole team could maintain it."
+stack:
+  [
+    "RedwoodJS",
+    "GraphQL",
+    "Prisma",
+    "PostgreSQL",
+    "React Native",
+    "PHP (legacy)",
+    "Flutter (legacy)",
+  ]
+featured: false
+order: 5
+links: []
+---
+
+## Problem / context
+
+A government education centre ran on a PHP backend and a Flutter tablet app that only one previous developer had ever safely worked on. That developer was no longer available, and I was the only person left who could touch it. The real business risk was not the accumulated bugs, it was that the organisation depended on a system nobody on the team understood.
+
+## Approach
+
+Phase one was the backend. I started the RedwoodJS GraphQL rebuild in late December 2023 and ran it alongside the existing Flutter tablet app, which I was maintaining at the same time, so the client kept a working system throughout. First live test was early February 2024 and it went to production later that month. With it came a web app where educators complete surveys, customise the questions they use, and have student workbooks emailed out.
+
+Phase two came a year later. Across March and April 2025 I migrated the tablet app from Flutter to React Native and Expo, so it sat in the same stack as everything else the team maintained. Roughly eight weeks to production on the backend, seven on the mobile migration, and I was the only developer on either.
+
+## Architecture
+
+The interesting constraint is in the room, not the repo. An educator drives a room of student tablets through a sequence of activities, and when the educator moves the class on, every tablet has to follow. The centre's wifi is variable.
+
+The obvious answer is websockets. I did not use them. Each tablet polls a status query every 1.8 seconds and navigates itself when the group's current task changes. There is no persistent connection to drop, a tablet that reloads or rejoins recovers on its next poll with no reconnection logic, and under two seconds is far faster than a classroom needs. Alongside it, capture is offline tolerant: in-progress answers and drawings persist locally and re-sync when the connection comes back.
+
+## Key decisions
+
+1. **Polling over websockets.** Deliberately the boring option. Nothing to keep alive, trivially recoverable, and it fitted the actual latency requirement of a room full of people rather than a benchmark.
+2. **Persist student work locally and sync later.** Variable wifi should cost a moment of delay, not a child's drawing.
+3. **Rebuild mobile only after the backend was stable.** Sequenced the risk so the React Native work was not built against a moving target.
+4. **Optimise for team maintainability over cleverness.** The goal was removing the single-developer dependency, so I stayed with conventions the rest of the team already knew.
+
+## Outcome
+
+A stable system in a stack the whole team can maintain, and the single-developer dependency gone. It ran in production for a year and a half between the two phases without the rewrite being thrown away, which is the part I would point at: the backend was rebuilt to be lived with, not just delivered. It is also my go-to example of choosing the robust, unexciting option that fits the real constraints, rather than the impressive one.

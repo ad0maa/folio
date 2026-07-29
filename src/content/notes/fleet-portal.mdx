@@ -1,0 +1,9 @@
+---
+title: "B2B fleet portal for a car-wash subscription platform"
+context: "Distinct ICT, 2025–2026"
+summary: "Business accounts where one admin invites and manages multiple sub-users under a single billing relationship: invitations, invited-user registration, plan selection and fleet billing."
+stack: ["RedwoodJS", "Prisma", "PostgreSQL", "Stripe", "SendGrid"]
+order: 3
+---
+
+The consumer product was a subscription car wash; the fleet portal was the business-facing half. A fleet admin invites drivers by email, each invited user completes their own registration and lands under the fleet's account, and billing consolidates to the business rather than to the individual. That means an invitation flow with real state (sent, accepted, expired), plan selection at the fleet level, and Stripe customer provisioning that keeps the business as the payer while still giving each driver their own identity in the system.

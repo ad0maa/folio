@@ -1,0 +1,53 @@
+---
+title: "ANZ Worldline terminal integration"
+role: "Full-stack engineer"
+timeframe: "2025–2026"
+summary: "Bridged ANZ Worldline EFTPOS hardware into a React Native point-of-sale app: a database-driven payment provider abstraction that switches at runtime, and a disconnect-recovery state machine so a dropped terminal never leaves a sale in limbo."
+stack:
+  [
+    "React Native",
+    "TypeScript",
+    "ANZ Worldline",
+    "Native Android bridge",
+    "Prisma",
+    "PostgreSQL",
+    "Stripe",
+  ]
+featured: true
+order: 3
+links: []
+---
+
+## Problem / context
+
+Some point-of-sale tenants needed to take card payments on dedicated ANZ EFTPOS terminals rather than through Stripe, for card-present rates and for payment reliability that does not depend on a venue's internet connection. The point-of-sale app is React Native, and ANZ Worldline shipped a native Android SDK with no React Native wrapper. There was nothing off the shelf.
+
+The work was to get that terminal into the app so staff could run purchases, refunds and reversals on the hardware, and to let a venue switch between Stripe and ANZ without a rebuild.
+
+## Approach
+
+I owned the integration architecture. The core idea is that the app should not know or care which payment provider it is talking to, so provider selection is data, resolved at runtime rather than compiled in: a point-of-sale device override first, then the venue default, then a Stripe fallback. That resolution is cached on the device so it still works if the network drops, which matters because the whole reason a venue wants dedicated hardware is that its connectivity is unreliable.
+
+On top of that sits a TypeScript bridge to the native layer, and the part that took the most thought: a disconnect-recovery state machine.
+
+## Architecture
+
+Terminals drop their connection mid-transaction. That is not an edge case, it is a Tuesday. The naive version of this integration leaves a sale stuck in an unknown state, which is the worst possible outcome, because nobody in the room knows whether the customer has been charged.
+
+So a dropped connection puts the app into an explicit recovery mode rather than an error state. It reconciles what actually happened on the terminal, then resolves the sale to match reality instead of guessing or asking staff to guess. Purchases, refunds and reversals all route through the same provider interface, so the rest of the app is unchanged whether a payment settles through Stripe or through the terminal.
+
+The native Android layer that talks to Worldline's SIX TIM SDK is Kotlin, and I leaned heavily on AI to write that glue. I directed what it needed to do and how it fitted the architecture, and I would not claim to have hand-written the native code from scratch. The architecture, the provider abstraction, the bridge and the recovery logic are mine.
+
+I also ran the payment certification and approval process for the integration myself, which is its own kind of work: the code passing your own tests is not the same as a bank signing off on a money path.
+
+## Key decisions
+
+1. **Provider selection as database-driven configuration, not a build flag.** A venue can be switched or fallen back without shipping a release, at the cost of a resolution order that has to be cached and correct offline.
+2. **Cache the resolved provider on the device.** More state to invalidate, in exchange for the app working through exactly the network conditions that justified buying the hardware.
+3. **Treat mid-transaction disconnects as a first-class state, not an error.** Considerably more logic than a try/catch, and it is the difference between reconciling a payment and asking a staff member to guess whether to charge again.
+4. **One provider interface for purchase, refund and reversal.** The rest of the point-of-sale app never branches on payment provider.
+5. **Use AI for the native SDK layer, and be explicit about it.** It got the integration into territory I would not have reached alone in the time available, and the honest framing is more useful to an interviewer than a claim of Kotlin fluency.
+
+## Outcome
+
+The integration passed payment approval and was ready for on-site rollout. It is the most involved system I have delivered, a real hardware money path, and a fair example of using AI to extend reach while still owning the design and the parts that decide whether the thing is trustworthy. It sits inside the same point-of-sale app described in the [ticketing and point-of-sale case study](/work/ticketing-pos).

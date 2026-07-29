@@ -1,0 +1,9 @@
+---
+title: "3D model viewer for an e-learning course builder"
+context: "Octivo / TMRW Group, 2023"
+summary: "A Three.js content block in a drag-and-drop course builder that let creators upload their own OBJ and GLTF models and have them display sensibly without any manual setup."
+stack: ["Three.js", "React", "Node.js", "Express", "MongoDB"]
+order: 4
+---
+
+Course creators wanted their own 3D models in lessons, which sounds simple until you consider that user-supplied assets arrive at arbitrary scales and origins. A model authored in metres and a model authored in millimetres both need to appear as a sensible object in the same viewport. So the viewer computes each model's bounds on load and fits it into the scene dynamically instead of assuming anything about the file. It shipped as a reusable learning-object block in the builder's component library. Scoped honestly: this was one feature area early in my first developer role, not years of 3D work.
