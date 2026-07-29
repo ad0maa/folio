@@ -15,7 +15,7 @@ interface Props {
   email: string;
 }
 
-const GROUP_ORDER = ["Go to", "Projects", "Elsewhere"];
+const GROUP_ORDER = ["Go to", "Work", "Projects", "Elsewhere"];
 
 export default function CommandPalette({ items, email }: Props) {
   const [open, setOpen] = useState(false);

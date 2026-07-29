@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import Hero from "../components/Hero.astro";
 import ProjectCard from "../components/ProjectCard.astro";
+import CaseStudyCard from "../components/CaseStudyCard.astro";
 import SkillsSection from "../components/SkillsSection.astro";
 import ContactSection from "../components/ContactSection.astro";
 import { SITE } from "../lib/site";
@@ -10,10 +11,44 @@ import { SITE } from "../lib/site";
 const projects = (await getCollection("projects")).sort(
   (a, b) => a.data.order - b.data.order,
 );
+
+const featuredStudies = (await getCollection("caseStudies"))
+  .filter((entry) => entry.data.featured)
+  .sort((a, b) => a.data.order - b.data.order);
 ---
 
 <Layout title={SITE.title} description={SITE.description}>
   <Hero />
+
+  <section
+    id="work"
+    class="mx-auto max-w-5xl scroll-mt-20 border-t border-panel-line px-6 py-20 sm:py-28"
+  >
+    <h2 class="font-mono text-xs uppercase tracking-[0.15em] text-signal">
+      Work
+    </h2>
+    <p
+      class="mt-3 max-w-2xl font-display text-3xl font-semibold text-paper sm:text-4xl"
+    >
+      Production systems, written up rather than linked.
+    </p>
+    <p class="mt-4 max-w-2xl text-muted">
+      Multi-tenant SaaS, payment splitting across separate businesses, EFTPOS
+      terminal hardware, seat concurrency. The client names are left out; the
+      architecture and the trade-offs are the part worth reading.
+    </p>
+
+    <div class="mt-12 grid gap-6 sm:grid-cols-2">
+      {featuredStudies.map((entry) => <CaseStudyCard entry={entry} />)}
+    </div>
+
+    <a
+      href="/work"
+      class="mt-8 inline-block font-mono text-sm text-trace transition-colors hover:text-signal"
+    >
+      All work, including the shorter pieces &rarr;
+    </a>
+  </section>
 
   <section
     id="projects"
@@ -23,10 +58,11 @@ const projects = (await getCollection("projects")).sort(
       Projects
     </h2>
     <p class="mt-3 max-w-2xl font-display text-3xl font-semibold text-paper sm:text-4xl">
-      A taste of what I'm building in the open.
+      What I'm building in the open.
     </p>
     <p class="mt-4 max-w-2xl text-muted">
-      These are in progress, and shown as such. It's what's visible while the rest of the work stays private.
+      Side projects, in progress and shown as such. Where the case studies above
+      are the commercial work, these are where I'm picking up new stacks.
     </p>
 
     <div class="mt-12 grid gap-6 sm:grid-cols-2">
@@ -44,10 +80,10 @@ const projects = (await getCollection("projects")).sort(
       Ten years behind a camera, now behind a keyboard.
     </p>
     <p class="mt-4 max-w-2xl text-muted">
-      Before engineering, I spent close to a decade in broadcast television
-      as a camera assistant and operator. The move to software kept the part
-      of that job I cared about most: getting a system to actually hold up
-      in production, not just in a demo.
+      Before engineering, I spent close to a decade in broadcast television as a
+      camera assistant and operator. Live production either goes to air or it
+      does not, which is most of why I care about systems holding up under real
+      conditions rather than in a demo.
     </p>
     <a
       href="/about"

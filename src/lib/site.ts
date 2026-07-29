@@ -20,6 +20,7 @@ export const CONTACT = {
 } as const;
 
 export const NAV_LINKS = [
+  { label: "Work", href: "/#work" },
   { label: "Projects", href: "/#projects" },
   { label: "Skills", href: "/#skills" },
   { label: "About", href: "/about" },

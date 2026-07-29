@@ -17,7 +17,11 @@ const { title, role, timeframe, summary, stack } = entry.data;
     <h3 class="font-display text-xl font-semibold text-paper sm:text-2xl">
       {title}
     </h3>
-    <span class="shrink-0 font-mono text-xs text-muted">{timeframe}</span>
+    {
+      timeframe && (
+        <span class="shrink-0 font-mono text-xs text-muted">{timeframe}</span>
+      )
+    }
   </div>
   <p class="font-mono text-xs uppercase tracking-[0.1em] text-signal">
     {role}
