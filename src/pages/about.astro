@@ -2,11 +2,63 @@
 import Layout from "../layouts/Layout.astro";
 import ContactSection from "../components/ContactSection.astro";
 import { CONTACT, SHOW_RESUME } from "../lib/site";
+
+const TIMELINE = [
+  {
+    period: "2013–2022",
+    title: "Camera assistant and operator",
+    detail:
+      "Close to ten years in broadcast television, at the Australian Broadcasting Corporation. Live production teaches you what shipping under real conditions actually costs.",
+  },
+  {
+    period: "2022–2023",
+    title: "Diploma of Information Technology",
+    detail:
+      "Full stack web development at Coder Academy. A deliberate career change, not a hedge.",
+  },
+  {
+    period: "2023",
+    title: "Junior developer",
+    detail:
+      "Started as an intern at Octivo / TMRW Group and was brought on in a paid role. MERN stack work across front end and back end, including a Three.js content block for a drag-and-drop course builder.",
+  },
+  {
+    period: "2023–2026",
+    title: "Junior engineer, then software engineer",
+    detail:
+      "Three years of production delivery at Distinct ICT in Geelong: multi-tenant SaaS, payments infrastructure, React Native apps in both app stores, DevOps across Render and Vercel, and client work on site.",
+  },
+  {
+    period: "Now",
+    title: "Looking for the next role",
+    detail:
+      "Available immediately, taking contract work in the meantime, and building side projects in stacks I want more reps in.",
+  },
+];
+
+const PRINCIPLES = [
+  {
+    heading: "The boring option, when it fits",
+    body: "Keeping a room of tablets in sync with an educator's screen is the textbook case for websockets. I used a 1.8 second poll instead: nothing to keep alive, a device that reloads recovers by itself, and it was well inside what a classroom needs. I would rather defend a simple thing that fits than an impressive thing that does not.",
+  },
+  {
+    heading: "Concurrency is a first-class concern",
+    body: "Two people buying the same allocated seat is not an edge case, it is a Saturday. Claiming a seat happens inside a transaction that re-checks availability before it writes, reservations expire on a timer, and a sweeper releases abandoned carts. \"What if two of these run at once\" is now a question I ask before writing the query, not after someone reports it.",
+  },
+  {
+    heading: "Money paths get audit trails",
+    body: "When one checkout has to pay three separate businesses, every transfer is recorded so a payment can be reconstructed later. Same reasoning behind structured logging early rather than eventually: the first time you have to explain a failed charge during a live registration window, you find out whether you can.",
+  },
+  {
+    heading: "Clear about where AI did the work",
+    body: "I use AI heavily, and I built it into a team's delivery workflow so a Jira transition opens a scoped pull request. I am also specific about it. The Kotlin glue to a payment terminal SDK was largely AI-written with me directing the design; the architecture, the provider abstraction and the disconnect recovery around it are mine. Being able to draw that line is the point.",
+  },
+];
 ---
 
 <Layout
   title="About"
-  description="From ten years in broadcast television to full stack engineering: what I've built and what I'm looking for."
+  description="From ten years in broadcast television to full stack engineering: what I've built, how I work, and what I'm looking for."
 >
   <article class="mx-auto max-w-5xl px-6 py-16 sm:py-20">
     <div class="max-w-3xl">
@@ -17,53 +69,78 @@ import { CONTACT, SHOW_RESUME } from "../lib/site";
       <div class="case-body mt-10">
         <p>
           I spent close to ten years in broadcast television before I wrote a
-          line of production code, as a camera assistant and then operator.
-          That background is part of why I care about shipping things that
-          actually work under real conditions, not just in a demo.
+          line of production code, as a camera assistant and then an operator.
+          Live television has a useful quality: it either goes to air or it does
+          not, and nobody is interested in why the rig worked yesterday. That is
+          most of why I care about systems holding up under real conditions
+          rather than in a demo, and why I would rather be on site for an event
+          night than hear about it second-hand on Monday.
         </p>
-
-        <h2>What I've built</h2>
         <p>
-          In my previous role, I built and shipped a range of production
-          systems, including:
+          Since then I have spent three years shipping production software end
+          to end: multi-tenant platforms, payments infrastructure, mobile apps
+          in both app stores, and the DevOps around them. That code is
+          commercial and stays private, so the systems are written up as <a
+            href="/work">case studies</a
+          > instead.
         </p>
-        <ul>
-          <li>
-            A multi-tenant registration and licensing platform for a
-            motorsport governing body, with role-based access and a
-            configurable payments fee engine.
-          </li>
-          <li>
-            A ticketing and point-of-sale platform running across multiple
-            live venues, with Stripe, digital wallet, and dedicated card
-            terminal integration, including allocated seating for large
-            venues.
-          </li>
-          <li>
-            A booking and subscription app for a gym, handling class bookings
-            and recurring memberships.
-          </li>
-          <li>
-            A tablet-based system for an education centre, migrated off an
-            unsupported legacy stack onto one a full team could maintain.
-          </li>
-          <li>
-            Platform and database migrations across hosting providers, with
-            measurable cost savings.
-          </li>
-          <li>
-            AI-assisted development workflows that changed where a small
-            team's actual bottleneck sat.
-          </li>
-        </ul>
 
+        <h2>The path here</h2>
+      </div>
+
+      <ol class="mt-8 border-l border-panel-line">
+        {
+          TIMELINE.map((item) => (
+            <li class="relative pb-10 pl-6 last:pb-0">
+              <span
+                class="absolute -left-[4.5px] top-2 h-2 w-2 rounded-full bg-signal"
+                aria-hidden="true"
+              />
+              <p class="font-mono text-xs tracking-[0.1em] text-signal">
+                {item.period}
+              </p>
+              <h3 class="mt-2 font-display text-xl font-semibold text-paper">
+                {item.title}
+              </h3>
+              <p class="mt-2 leading-relaxed text-muted">{item.detail}</p>
+            </li>
+          ))
+        }
+      </ol>
+
+      <div class="case-body mt-16 border-t border-panel-line pt-10">
+        <h2>How I work</h2>
+      </div>
+
+      <dl class="mt-8 grid gap-6 sm:grid-cols-2">
+        {
+          PRINCIPLES.map((item) => (
+            <div class="rounded-lg border border-panel-line bg-panel p-6">
+              <dt class="font-display text-lg font-semibold text-paper">
+                {item.heading}
+              </dt>
+              <dd class="mt-3 text-sm leading-relaxed text-muted">
+                {item.body}
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+
+      <div class="case-body mt-16 border-t border-panel-line pt-10">
         <h2>What I'm looking for</h2>
         <p>
           A mid-level engineering role, Melbourne hybrid or remote, available
-          now. Most of what I've shipped has been full stack, web and mobile,
-          but I'm equally comfortable owning a backend system or a front-end
-          build on its own. The range just means I can plug in wherever a
-          team needs me.
+          now. Most of what I have shipped is full stack across web and mobile,
+          and I am equally happy owning a backend system or a front-end build on
+          its own. The range means I can plug in where a team actually needs
+          someone, rather than only where my last job happened to sit.
+        </p>
+        <p>
+          Teams where an engineer talks to the people using the thing suit me
+          best. Some of the most useful changes I have made came from standing
+          behind a counter watching staff use software I wrote, which is not
+          something you discover from a ticket queue.
         </p>
       </div>
 
