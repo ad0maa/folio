@@ -18,7 +18,7 @@ Astro, React islands, MDX content collections, Tailwind CSS v4, TypeScript stric
 
 ## Content
 
-Case studies live in `src/content/case-studies/`, side projects in `src/content/projects/`, both defined in `src/content.config.ts`. Add a new case study by dropping an `.mdx` file with the required frontmatter into the relevant folder — no code changes needed.
+Case studies live in `src/content/case-studies/`, shorter write-ups in `src/content/notes/` (rendered inline on `/work`), side projects in `src/content/projects/`, all defined in `src/content.config.ts`. Add a new case study by dropping an `.mdx` file with the required frontmatter into the relevant folder — no code changes needed.
 
 ## Outstanding before launch
 
