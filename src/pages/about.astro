@@ -8,7 +8,7 @@ const TIMELINE = [
     period: "2013–2022",
     title: "Camera assistant and operator",
     detail:
-      "Close to ten years in broadcast television, at the Australian Broadcasting Corporation. Live production teaches you what shipping under real conditions actually costs.",
+      "Close to ten years in broadcast television, primarily at the Australian Broadcasting Corporation, with freelance work across other networks including a US television series. Live production teaches you what shipping under real conditions actually costs.",
   },
   {
     period: "2022–2023",
@@ -36,24 +36,6 @@ const TIMELINE = [
   },
 ];
 
-const PRINCIPLES = [
-  {
-    heading: "The boring option, when it fits",
-    body: "Keeping a room of tablets in sync with an educator's screen is the textbook case for websockets. I used a 1.8 second poll instead: nothing to keep alive, a device that reloads recovers by itself, and it was well inside what a classroom needs. I would rather defend a simple thing that fits than an impressive thing that does not.",
-  },
-  {
-    heading: "Concurrency is a first-class concern",
-    body: "Two people buying the same allocated seat is not an edge case, it is a Saturday. Claiming a seat happens inside a transaction that re-checks availability before it writes, reservations expire on a timer, and a sweeper releases abandoned carts. \"What if two of these run at once\" is now a question I ask before writing the query, not after someone reports it.",
-  },
-  {
-    heading: "Money paths get audit trails",
-    body: "When one checkout has to pay three separate businesses, every transfer is recorded so a payment can be reconstructed later. Same reasoning behind structured logging early rather than eventually: the first time you have to explain a failed charge during a live registration window, you find out whether you can.",
-  },
-  {
-    heading: "Clear about where AI did the work",
-    body: "I use AI heavily, and I built it into a team's delivery workflow so a Jira transition opens a scoped pull request. I am also specific about it. The Kotlin glue to a payment terminal SDK was largely AI-written with me directing the design; the architecture, the provider abstraction and the disconnect recovery around it are mine. Being able to draw that line is the point.",
-  },
-];
 ---
 
 <Layout
@@ -73,8 +55,7 @@ const PRINCIPLES = [
           Live television has a useful quality: it either goes to air or it does
           not, and nobody is interested in why the rig worked yesterday. That is
           most of why I care about systems holding up under real conditions
-          rather than in a demo, and why I would rather be on site for an event
-          night than hear about it second-hand on Monday.
+          rather than in a demo.
         </p>
         <p>
           Since then I have spent three years shipping production software end
@@ -109,25 +90,6 @@ const PRINCIPLES = [
       </ol>
 
       <div class="case-body mt-16 border-t border-panel-line pt-10">
-        <h2>How I work</h2>
-      </div>
-
-      <dl class="mt-8 grid gap-6 sm:grid-cols-2">
-        {
-          PRINCIPLES.map((item) => (
-            <div class="rounded-lg border border-panel-line bg-panel p-6">
-              <dt class="font-display text-lg font-semibold text-paper">
-                {item.heading}
-              </dt>
-              <dd class="mt-3 text-sm leading-relaxed text-muted">
-                {item.body}
-              </dd>
-            </div>
-          ))
-        }
-      </dl>
-
-      <div class="case-body mt-16 border-t border-panel-line pt-10">
         <h2>What I'm looking for</h2>
         <p>
           A mid-level engineering role, Melbourne hybrid or remote, available
@@ -135,12 +97,6 @@ const PRINCIPLES = [
           and I am equally happy owning a backend system or a front-end build on
           its own. The range means I can plug in where a team actually needs
           someone, rather than only where my last job happened to sit.
-        </p>
-        <p>
-          Teams where an engineer talks to the people using the thing suit me
-          best. Some of the most useful changes I have made came from standing
-          behind a counter watching staff use software I wrote, which is not
-          something you discover from a ticket queue.
         </p>
       </div>
 
