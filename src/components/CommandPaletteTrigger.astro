@@ -3,15 +3,6 @@ import { getCollection } from "astro:content";
 import CommandPalette from "./CommandPalette";
 import { CONTACT, SHOW_RESUME } from "../lib/site";
 
-const caseStudies = (await getCollection("caseStudies"))
-  .sort((a, b) => a.data.order - b.data.order)
-  .map((entry) => ({
-    group: "Work",
-    label: entry.data.title,
-    hint: entry.data.role,
-    href: `/work/${entry.id}`,
-  }));
-
 const projects = (await getCollection("projects"))
   .sort((a, b) => a.data.order - b.data.order)
   .map((entry) => ({
@@ -27,7 +18,7 @@ const items = [
     group: "Go to",
     label: "Work",
     hint: "Case studies",
-    href: "/work",
+    href: "/#work",
   },
   {
     group: "Go to",
@@ -43,7 +34,6 @@ const items = [
     hint: "Get in touch",
     href: "/#contact",
   },
-  ...caseStudies,
   ...projects,
   {
     group: "Elsewhere",
