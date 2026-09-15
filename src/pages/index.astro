@@ -14,7 +14,8 @@ const projects = (await getCollection("projects")).sort(
 
 const featuredStudies = (await getCollection("caseStudies"))
   .filter((entry) => entry.data.featured)
-  .sort((a, b) => a.data.order - b.data.order);
+  .sort((a, b) => a.data.order - b.data.order)
+  .slice(0, 4);
 ---
 
 <Layout title={SITE.title} description={SITE.description}>
@@ -61,6 +62,13 @@ const featuredStudies = (await getCollection("caseStudies"))
     <div class="mt-12 grid gap-6 sm:grid-cols-2">
       {featuredStudies.map((entry) => <CaseStudyCard entry={entry} />)}
     </div>
+
+    <a
+      href="/work"
+      class="mt-8 inline-block font-mono text-sm text-trace transition-colors hover:text-signal"
+    >
+      See more work &rarr;
+    </a>
   </section>
 
   <SkillsSection />
