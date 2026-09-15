@@ -1,9 +1,0 @@
----
-title: "Gym membership and class booking platform"
-context: "Distinct ICT, 2025–2026"
-summary: "Subscription memberships with a webhook-driven lifecycle, online purchase of class packages, and capacity-limited bookings with a waitlist. Built for one gym, structured multi-tenant for resale."
-stack: ["RedwoodJS", "Prisma", "PostgreSQL", "Stripe", "React Native"]
-order: 2
----
-
-My scope was memberships and bookings. Stripe subscriptions drive membership status through webhooks rather than through anything the app decides on its own, so a failed payment or a cancellation upstream is reflected without a nightly job trying to reconcile two sources of truth. On top of that: online purchase of class passes and packages, capacity-limited class bookings with waitlisting and automatic promotion when a spot opens, and coupons. I also traced and fixed a connection-pool exhaustion problem. Separately, I refactored the ticketing platform's React Native point-of-sale app so the gym could take card and cash payments at the desk.
