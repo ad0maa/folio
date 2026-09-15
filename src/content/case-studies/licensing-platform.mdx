@@ -1,0 +1,62 @@
+---
+title: "Motorsport licensing and registration platform"
+role: "Full-stack engineer"
+timeframe: "2024–2026"
+summary: "Multi-tenant SaaS replacing spreadsheets and paper forms for a motorsport governing body: a club and class hierarchy, three-layer role-based access, and one checkout that splits payment across several separate businesses."
+stack:
+  [
+    "RedwoodJS / CedarJS",
+    "TypeScript",
+    "GraphQL",
+    "Prisma",
+    "PostgreSQL",
+    "Stripe Connect",
+    "AWS S3",
+    "SendGrid",
+    "CMS",
+  ]
+featured: true
+order: 1
+links: []
+---
+
+## Problem / context
+
+A motorsport governing body ran competitor licensing and event registration across spreadsheets, paper forms and manual admin spread over regional clubs and racing classes. Every club had its own officials, its own fee arrangement and its own idea of who was allowed to approve what, and none of it was written down as a system. It lived in whoever had been doing the job longest.
+
+The brief was one platform: competitors register and renew licences online, clubs run their own events and registrations, and the governing body gets a single source of truth. I owned the access model and the payments engine, and worked across the API and the front end.
+
+## Approach
+
+The platform is built on RedwoodJS, later CedarJS: a GraphQL-first full-stack framework that kept a small team fast across both the API and the web app. The club and class hierarchy went straight into the Prisma schema as the backbone that every other feature scopes against.
+
+Permissions were the hardest part to get right, and the access model shipped in three versions, each one replacing the last as real usage exposed what the previous one could not express:
+
+- **v1** was a boolean `isClubAdmin` flag. Fast to ship, and wrong inside a season: it could not describe "official for this class only" or "read-only steward".
+- **v2** was a per-club role table with checks written into each service. Better, but every service reimplemented its own version of "is this user allowed to do this", and the logic drifted between them.
+- **v3** is a three-layer model, platform then club then class, resolved by a single permission service that every request passes through. One place to reason about access instead of one per service.
+
+## Architecture
+
+Multi-tenancy is row-scoped rather than schema-per-tenant: one database, one migration path, with club scoping enforced through a shared query helper at the service layer instead of left to each resolver to remember.
+
+The payments side is where most of the design work went. A single registration checkout often has to pay several parties at once, because the racing class, the local club and sometimes an alternate class are each a separate business with its own bank account. It runs on Stripe Connect using separate charges and transfers: the platform captures the full payment, then on the `checkout.session.completed` webhook a transfer service fans the charge out to each party's connected account based on which product each line item belonged to, recording every transfer for reconciliation.
+
+Every tenant also wanted a different answer to who absorbs the processing fee, so fees are a gross-up calculation, base plus fixed divided by one minus the rate, which means whoever absorbs the fee still nets the right amount. The fee bearer is configurable per tenant across four modes, and a fixed fee is distributed across line items rather than dumped on the first one. Refunds and negative payout periods are reconciled rather than ignored.
+
+Clubs and classes also needed to publish their own content, so the platform carries a content management layer: marketing pages and bulletins composed from reusable templates and editable modules, which took developers out of routine content updates entirely. The constraint that made it interesting was that one template set had to hold up across clients whose events, tone and content needs had almost nothing in common, so the modules had to be general without collapsing into a blank page nobody could use.
+
+Around that: licence and insurance documents go to S3, confirmations and renewal reminders through SendGrid, and structured logs into Grafana Loki. Clubs that wanted registration on their own existing sites got an embedded, iframed registration flow talking to the same backend, so payment still settles on the platform without a club rebuilding its website.
+
+## Key decisions
+
+1. **Iterate the access model instead of designing it up front.** Two live permission-data migrations rather than one long design phase, but each version was corrected by real usage rather than guesswork.
+2. **Separate charges and transfers over destination charges.** More moving parts and a webhook to get right, in exchange for one payment cleanly splitting across several businesses with a transfer record behind every cent.
+3. **Fee rules as data, not code.** More to test in the checkout path, in exchange for a new pricing arrangement being a database change instead of a deploy.
+4. **Row-scoped multi-tenancy over schema-per-tenant.** Simpler operations and one migration path, at the cost of needing every query disciplined about club scoping, which is why the scoping lives in a shared helper rather than in convention.
+5. **Embedded iframe registration over a redirect or an SDK.** Clubs keep the sites they already have; the cost is a strict `postMessage` contract for cross-origin sizing and navigation.
+6. **Content as templates and modules, not free-form pages.** Administrators get less freedom than a blank editor would give them, in exchange for pages that stay coherent across very different clients and never need a developer to fix.
+
+## Outcome
+
+Live and in active use for licence issuance and event registration across multiple clubs, including real payments during high-traffic registration windows. One checkout reliably pays several clubs and classes with a full audit trail, and each tenant sets its own fee policy without a code change. It is the work I am most confident defending line by line, because it made me understand payment flows properly rather than just call an API.

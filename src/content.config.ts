@@ -6,7 +6,7 @@ const caseStudies = defineCollection({
   schema: z.object({
     title: z.string(),
     role: z.string(),
-    timeframe: z.string(),
+    timeframe: z.string().optional(),
     summary: z.string(),
     stack: z.array(z.string()),
     featured: z.boolean().default(false),
@@ -34,4 +34,15 @@ const projects = defineCollection({
   }),
 });
 
-export const collections = { caseStudies, projects };
+const notes = defineCollection({
+  loader: glob({ pattern: "**/*.mdx", base: "./src/content/notes" }),
+  schema: z.object({
+    title: z.string(),
+    context: z.string(),
+    summary: z.string(),
+    stack: z.array(z.string()),
+    order: z.number(),
+  }),
+});
+
+export const collections = { caseStudies, projects, notes };

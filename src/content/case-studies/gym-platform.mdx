@@ -1,0 +1,50 @@
+---
+title: "Gym membership and class booking platform"
+role: "Full-stack engineer"
+timeframe: "2025–2026"
+summary: "Multi-tenant gym platform selling memberships as real Stripe subscriptions and booking capacity-limited classes with a waitlist, built on the same platform lineage as the ticketing and point-of-sale codebase."
+stack:
+  [
+    "RedwoodJS",
+    "TypeScript",
+    "GraphQL Yoga",
+    "Prisma",
+    "PostgreSQL",
+    "Stripe Connect",
+    "React",
+    "SendGrid",
+  ]
+featured: true
+order: 6
+links: []
+---
+
+## Problem / context
+
+A gym operator needed to sell memberships as ongoing subscriptions rather than one-off purchases, and let members book classes without overselling a session that only has so many spots. The platform is multi-tenant from the same lineage as an existing ticketing and point-of-sale codebase, so it inherited that shape: multiple organisations, each running their own venue, billing through their own Stripe account.
+
+Membership status needed to reflect what Stripe actually knows — trialing, past due, paused, canceled — rather than a flag the app decided on its own and could drift out of sync with billing. Class capacity needed to hold under real concurrency: several members hitting "book" on the last spot in the same session at the same moment.
+
+## Approach
+
+I owned the subscriptions and class-booking side of a small team. A `Plan` (membership or class pass) carries one or more `PlanPrice` records for cents, frequency and intro or couple pricing, and a `Membership` syncs to a real Stripe subscription created on the gym's own Connect account, so the platform never holds gym-specific funds itself. A webhook handler maps every relevant Stripe event — subscription created, updated, past due, canceled, invoice paid or failed — onto `MembershipStatus`, so a failed card or a cancellation made upstream in Stripe's dashboard shows up in the app automatically instead of through a reconciliation job running after the fact. Plan upgrades and downgrades go through a `ScheduledPlanChange` rather than mutating the live subscription immediately, so a change lands cleanly on the next billing cycle instead of prorating mid-cycle.
+
+Class booking sits on the same billing model. A `ClassOffering` has `ClassSession` instances, and a `ClassBooking` is unique per session and user. Confirming a booking counts existing confirmed bookings for that session inside a database transaction before writing the new one, so the capacity check and the write cannot be split by a race; overflow goes to a waitlist with a position, and a cancellation automatically promotes the next person off it. Non-members spend a class credit instead of paying per class, which meant tracking credit state (issued, used) alongside the booking itself.
+
+## Architecture
+
+Multi-tenancy is `Organisation` (unique subdomain, its own `stripeConnectedAccountId`) containing one or more `Venue`s, enforced with a custom `@requireOrganisation` GraphQL directive plus explicit `organisationId` scoping on every query that needs it, rather than relying on database row-level security alone. Each organisation can also toggle features independently through a per-org `FeatureFlag` table. The API is RedwoodJS on Postgres/Prisma with dbAuth and GraphQL Yoga; the web client is React with Apollo, MUI/Radix and Tailwind, deployed across Render and Vercel.
+
+The product also includes 24-hour door access gated on an active membership — a member with the right plan can unlock a door outside staffed hours. That integration, the bridge to UniFi's Access API and its audit log, was built by a teammate; it is not part of what I claim here. My contribution on that side was supporting work: some of the customer-facing pages, a demo and seed environment for it, environment configuration, and a crash fix in the Lambda handling it.
+
+## Key decisions
+
+1. **Drive membership status from Stripe webhooks, not app-side logic.** The alternative is the app deciding for itself when a membership lapses and drifting from what Stripe actually charged, which is the exact failure mode that erodes trust in billing.
+2. **Queue plan changes as a scheduled record instead of mutating the subscription immediately.** Slightly more moving parts, in exchange for changes landing on a predictable billing boundary rather than a mid-cycle proration nobody asked for.
+3. **Count confirmed bookings inside a transaction, with a waitlist for overflow.** This closes the obvious race for a full session. The very last spot under simultaneous requests is not fully lock-proof yet — the honest next step is a row lock or a queue ahead of that check, which I'd add before pushing this to much higher contention.
+4. **Credits for non-members instead of a charge per class.** Kept booking and payment as separate concerns: a credit is spent at booking time, and how that credit was paid for is Stripe's problem, not the booking transaction's.
+5. **Be precise about scope on door access.** It's a real feature of the product and worth describing, but the UniFi integration itself was a teammate's build. My work touching that area was supporting, not the integration.
+
+## Outcome
+
+Billing and class booking run on real Stripe subscription state rather than an app-maintained approximation of it, coupons and discounts sync correctly, and the class-booking transaction plus credit handling shipped without the double-booking bugs that a naive count-then-write would produce. I also traced and fixed a connection-pool exhaustion issue on the classes page that had been intermittently taking the endpoint down under load.

@@ -1,0 +1,11 @@
+---
+title: "Bellarine Links"
+status: "live"
+summary: "A browser-based 3D golf hole visualiser — procedural terrain, ballistic shot arcs and cinematic camera modes, built entirely in code with no model or texture assets."
+stack: ["React", "three.js", "React Three Fiber", "TypeScript", "Zustand", "Vite"]
+repoUrl: "https://github.com/ad0maa/golf-hole-explorer"
+liveUrl: "https://bellarinelinks.adamtunchay.dev"
+order: 3
+---
+
+A three.js refresher project: three holes on a fictional coastal links course, with pointer-based aiming, club selection, ballistic shot arcs and five camera modes (Tee, Green, Overhead, Orbit, Flyover). Every mesh, material and colour is generated in code — terrain is a hand-built `BufferGeometry` with per-vertex colouring driven by distance to each hole's centreline, and trees are scattered by rejection sampling into two `InstancedMesh` draw calls. Shot arcs are parabolas fitted to club carry distance with wind drift applied along the shot normal, landing via bilinear interpolation of the height grid rather than raycasting.
