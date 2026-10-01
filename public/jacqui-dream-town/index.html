@@ -501,6 +501,17 @@
       text-align: left
     }
 
+    .toast.ach img {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      flex: none
+    }
+
+    .toast.ach.mode {
+      border-color: var(--pink-d)
+    }
+
     .toast.ach svg {
       width: 30px;
       height: 30px;
@@ -1753,7 +1764,7 @@
 
         // Adam and Moose drop by: first visit shortly after the first shop opens, then every few minutes
         visits: {
-          firstDelay: 12, minGap: 150, maxGap: 300, kissCooldown: 120, talkSeconds: 7, giftSeconds: 15, giftMin: 10,
+          firstDelay: 12, returnDelay: 25, minGap: 90, maxGap: 180, kissCooldown: 120, talkSeconds: 7, giftSeconds: 15, giftMin: 10,
           // Adam's script. Flirty, like he is still trying to win her over.
           first: 'Hey hot stuff, love the laminated eyebrows. You are fineee girl, keep up the good work.',
           lines: [
@@ -1786,6 +1797,53 @@
             'Happy tail thumps. (He missed you. It has been eleven minutes.)',
             'Woof woof! (He would like it noted that Dennis started it.)',
           ],
+        },
+
+        // Emma, Jacqui's best friend. Flirty mode: she gatecrashes Adam's visits (never his very first).
+        // Bestie mode: she visits Jacqui on her own. Tap the charm heart 8 times in a row to switch.
+        emma: {
+          crashChance: 1, kissCrashChance: 1, bestieMin: 240, bestieMax: 420, bestieReturn: 40, toggleTaps: 8,
+          // matched one-for-one with visits.lines: Emma upstages whatever Adam just said
+          counters: [
+            "Prettiest? Adam, I'm literally standing right here.",
+            'Moose has great taste. Wonder if his owner does too?',
+            'Speaking of illegal, Adam, those arms should need a licence.',
+            "Almost? Adam, you haven't seen my side of town.",
+            "I can be the view. I've got loads of patterns. Very scenic.",
+            "I laminated mine too, Adam. Nobody asked, but I'm telling you.",
+            'Adam, does that moustache tickle? Asking for me.',
+            "Already called them. Told them Adam's the emergency.",
+            "Adam, I've been smiling at you this whole time.",
+            "Ten out of ten? I'm an eleven, Adam.",
+            "I don't have a permit either. Arrest me, Adam.",
+          ],
+          flirts: [
+            'Wow, you have such big muscles.',
+            'Your dog is so cute. Almost as cute as you.',
+            'Is that a beanie or a crown? Because, king.',
+            'Love a man with a moustache. Very distinguished.',
+            'Do you work out, or do you just carry Moose everywhere?',
+            "Black crew neck? Mysterious. I'm into it.",
+            'Adam! Fancy seeing you here. And by fancy I mean me.',
+          ],
+          jacquiMad: ["Excuse me. I'm RIGHT here.", 'Emma. Read the room.', 'I saw him first.', 'EMMA.'],
+          recovery: ["Anyway. Where was I? Oh right, you're stunning.", 'Sorry, did someone say something? I was busy looking at you.', 'Emma who? Hey, hot stuff.'],
+          mooseTraitor: 'Woof! (Moose has decided Emma is also nice. Traitor.)',
+          kissCrash: ['Ew. Get a room.', 'Save some for me, Adam.'],
+          exitLines: ['Call me, Adam!', "Bye Moose! Bye Adam's arms!", "Fine, I'll go. Slowly. In case anyone wants to stop me."],
+          bestieLines: [
+            "Babe, this town is serving. I'm moving in.",
+            "Is that a new shop? I'll take one of everything.",
+            "Your outfit is cute. Mine's cuter, but yours is cute.",
+            'Okay, gossip time. Dennis, cover your ears.',
+            "Clashing is a lifestyle. Don't knock it.",
+            "Brunch? I'm buying. You're paying.",
+            'How was last night? How big did you say he is again?',
+          ],
+          jacquiBestie: ["You'd clash with every building.", "Sit down, I've got tea."],
+          bestieBye: ['Love you, babe!', 'Brunch soon!', 'Text me!'],
+          tapFlirty: ['Hiii, Adam.', 'Nice arms.', 'Is he single? Asking for me.'],
+          tapBestie: ['Hiii!', 'Babe!', 'Love this for us.'],
         },
 
         dvd: { hintRadius: 3.2, fallbackSeconds: 480, incomeBonus: 0.10, rustleTaps: 3, weights: { deco: 0.4, building: 0.3, plot: 0.3 } },
@@ -1945,7 +2003,7 @@
          State, save and load
          ===================================================================== */
       let S = null;                          // persistent game state
-      const prefs = { sound: true, music: true };
+      const prefs = { sound: true, music: true, emma: 'flirty' };
       try { Object.assign(prefs, JSON.parse(localStorage.getItem(CONFIG.saveKey + '.prefs') || '{}')); } catch (e) { }
       function savePrefs() { try { localStorage.setItem(CONFIG.saveKey + '.prefs', JSON.stringify(prefs)); } catch (e) { } }
 
@@ -1955,7 +2013,7 @@
           plots: ['C'], objects: [], nextId: 1,
           pets: 0, boostLeft: 0, cdLeft: 0, stashes: 0, customers: 0, upgrades: 0, collected: 0,
           ach: {}, tut: 0, won: false, char: null, outfit: 'cream',
-          visits: 0, kisses: 0, visitT: CONFIG.visits.firstDelay, kissCd: 0,
+          visits: 0, kisses: 0, visitT: CONFIG.visits.firstDelay, kissCd: 0, emmaT: 90,
           dvd: { spot: null, found: false, rustle: 0, fallback: false },
         };
         const add = (kind, type, x, y, extra) => { const o = Object.assign({ id: s.nextId++, kind, type, x, y, lvl: 1, stash: 0, mgr: false }, extra); s.objects.push(o); return o; };
@@ -2985,27 +3043,50 @@
       const OUTFITS = {
         cream: { name: 'Cream knit', top: '#FFF1D6', trim: '#EBD6AE', leg: '#3B3342', shoe: '#fff', cosy: 1 },
         black: { name: 'Black top', top: '#2E2733', trim: '#4A3F52', leg: '#9DB7D9', shoe: '#fff', cosy: 0 },
-        pink:  { name: 'Pink glam', top: '#FF8FBF', trim: '#EA5F9E', leg: '#fff', shoe: '#EA5F9E', cosy: 0 },
+        pink:  { name: 'Pink glam', top: '#FF8FBF', trim: '#EA5F9E', leg: '#fff', shoe: '#EA5F9E', cosy: 0, heart: 1 },
       };
       // Looks for Jacqueline. `tall` runs from 0 (round chibi) to 1 (slimmer, longer legs, softer oval face).
       const LOOKS = {
-        A: { name: 'Cat-eye', note: 'Slim, side-swept waves, thin cat-eye frames, no blush.', tall: 1, glasses: 'cateye', frame: '#1E1A22', part: 'side', blush: 0 },
-        B: { name: 'Soft square', note: 'Slim, centre part, thin rounded-square frames, a hint of blush.', tall: 1, glasses: 'square', frame: '#1E1A22', part: 'centre', blush: 0.3 },
-        C: { name: 'Gold ovals', note: 'Slim, side part, fine gold oval frames.', tall: 1, glasses: 'oval', frame: '#C79A3B', part: 'side', blush: 0.2 },
-        D: { name: 'Tortoiseshell', note: 'Halfway between chibi and slim, bigger tortoiseshell frames.', tall: 0.55, glasses: 'bigsquare', frame: '#7A4B2A', part: 'side', blush: 0 },
-        E: { name: 'Sunnies up', note: 'Slim, centre part, no glasses on her face, sunglasses pushed up in her hair.', tall: 1, glasses: 'onhead', frame: '#2B2230', part: 'centre', blush: 0.2 },
-        F: { name: 'Classic, tidied', note: 'The original round chibi with the stray strand and cheek dots removed, smaller thin round frames.', tall: 0, glasses: 'round', frame: '#1E1A22', part: 'side', blush: 0.25 },
+        A: { name: 'Cat-eye', tall: 1, glasses: 'cateye', frame: '#1E1A22', part: 'side', blush: 0 },
+        B: { name: 'Soft square', tall: 1, glasses: 'square', frame: '#1E1A22', part: 'centre', blush: 0.3 },
+        C: { name: 'Gold ovals', tall: 1, glasses: 'oval', frame: '#C79A3B', part: 'side', blush: 0.2 },
+        D: { name: 'Tortoiseshell', tall: 0.55, glasses: 'bigsquare', frame: '#7A4B2A', part: 'side', blush: 0 },
+        E: { name: 'Sunnies up', tall: 1, glasses: 'onhead', frame: '#2B2230', part: 'centre', blush: 0.2 },
+        F: { name: 'Classic, tidied', tall: 0, glasses: 'round', frame: '#1E1A22', part: 'side', blush: 0.25 },
       };
       const jacquiHeight = look => { const k = (LOOKS[look] || LOOKS[CONFIG.look]).tall; return lerp(6.5, 13, k) + lerp(10, 12.5, k) + 0.6 + lerp(9.8, 8.4, k) * 1.94 + 2.4; };
-      // Jacqueline: long wavy dark-brown hair, glasses, warm smile. Origin = feet.
-      function drawJacqui(c, t, o = {}) {
-        const L = LOOKS[o.look] || LOOKS[CONFIG.look], k = L.tall, fit = OUTFITS[o.outfit] || OUTFITS.cream;
-        const walk = !!o.walk, sw = walk ? Math.sin(t * 10) : 0;
-        const bob = walk ? Math.abs(Math.sin(t * 10)) * 1.5 : Math.sin(t * 2.2) * 0.45;
+
+      // Clothing patterns for Emma, drawn once into small tiles that repeat every 4 world units.
+      const PATTERNS = {};
+      function initPatterns() {
+        const make = (name, draw) => {
+          const T = 32, cv = document.createElement('canvas'); cv.width = cv.height = T;
+          const g = cv.getContext('2d'); draw(g, T);
+          const p = g.createPattern(cv, 'repeat');
+          if (p.setTransform && window.DOMMatrix) p.setTransform(new DOMMatrix().scale(4 / T));
+          PATTERNS[name] = p;
+        };
+        make('leopard', (g, T) => {
+          g.fillStyle = '#E9B96A'; g.fillRect(0, 0, T, T);
+          for (const [x, y, r] of [[7, 7, 4.4], [23, 10, 3.8], [14, 22, 4.2], [28, 27, 3.4], [2, 25, 3]]) {
+            g.fillStyle = '#9A6332'; g.beginPath(); g.ellipse(x, y, r, r * 0.8, 0.4, 0, 6.3); g.fill();
+            g.strokeStyle = '#3A2418'; g.lineWidth = 2.2; g.beginPath(); g.ellipse(x, y, r + 1, r * 0.8 + 1, 0.4, 0.3, 2.4); g.stroke(); g.beginPath(); g.ellipse(x, y, r + 1, r * 0.8 + 1, 0.4, 3.4, 5.4); g.stroke();
+          }
+        });
+        make('stripes', (g, T) => { g.fillStyle = '#fff'; g.fillRect(0, 0, T, T); g.fillStyle = '#E8414F'; g.fillRect(0, 0, T, 8); g.fillRect(0, 16, T, 8); });
+        make('gingham', (g, T) => { g.fillStyle = '#fff'; g.fillRect(0, 0, T, T); g.fillStyle = 'rgba(60,140,255,.45)'; g.fillRect(0, 0, 16, T); g.fillRect(0, 0, T, 16); });
+      }
+
+      // One drawing for Jacqueline and Emma. Origin = feet.
+      // o: { look, hair, hairLo, fringe, fit, brow, bow, mood: 'mad'|'smitten', walk, work, face }
+      function drawGirl(c, t, o = {}) {
+        const L = o.look, k = L.tall, fit = o.fit;
+        const walk = !!o.walk, sw = walk ? Math.sin(t * 10) : 0, mad = o.mood === 'mad', smit = o.mood === 'smitten';
+        const bob = walk ? Math.abs(Math.sin(t * 10)) * 1.5 : mad ? Math.abs(Math.sin(t * 9)) * 0.5 : Math.sin(t * 2.2) * 0.45;
         const sway = Math.sin(t * 1.7) * 1.1 + sw, blink = (t % 3.7) < 0.13;
-        const hair = '#4A2D22', hairLo = '#38211A', skin = '#FBD9C5', skinSh = '#EFBFA8', ink = '#2B1A16';
+        const hair = o.hair || '#4A2D22', hairLo = o.hairLo || '#38211A', skin = '#FBD9C5', skinSh = '#EFBFA8', ink = '#2B1A16';
         const leg = lerp(6.5, 13, k), torso = lerp(10, 12.5, k), hx = lerp(9.6, 7.4, k), hy = lerp(9.8, 8.4, k);
-        const sh = lerp(5.2, 4.7, k), waist = lerp(6.2, 3.5, k) + fit.cosy * k * 0.7, hip = lerp(6.6, 4.7, k), fs = lerp(1.15, 1, k);
+        const sh = lerp(5.2, 4.7, k), waist = lerp(6.2, 3.5, k) + (fit.cosy || 0) * k * 0.7, hip = lerp(6.6, 4.7, k), fs = lerp(1.15, 1, k);
         const hipY = -leg, shY = hipY - torso, hc = shY - 0.6 - hy * 0.94;
         c.save(); c.scale(o.face || 1, 1); c.lineCap = 'round'; c.lineJoin = 'round';
         ell(c, 0, 0.5, 8.4, 3, 'rgba(90,53,96,.18)');
@@ -3038,14 +3119,18 @@
         c.closePath(); c.fill();
         ell(c, 0, shY + 0.5, 1.9, 1.25, skin);
         if (fit.cosy) { rr(c, -hip - 0.1, hipY - 0.7, hip * 2 + 0.2, 1.8, 0.9, fit.trim); c.strokeStyle = fit.trim; c.lineWidth = 0.6; c.beginPath(); for (const x of [-1.9, 0, 1.9]) { c.moveTo(x, shY + 3.2); c.lineTo(x, hipY - 1.4); } c.stroke(); }
-        if (o.outfit === 'pink') heart(c, 0, shY + torso * 0.42, 1.7, '#fff');
+        if (fit.heart) heart(c, 0, shY + torso * 0.42, 1.7, '#fff');
 
-        // arms
-        const arm = o.work ? Math.sin(t * 12) * 3 : sw * 2, aw = lerp(3.3, 2.5, k), handY = shY + torso * 0.8;
-        const ax = o.work ? sh + 3.4 : sh + 1.5, ay = o.work ? shY - 1.6 + arm : handY - arm * 0.6;
-        c.strokeStyle = fit.top; c.lineWidth = aw;
-        c.beginPath(); c.moveTo(-sh + 0.3, shY + 1.9); c.lineTo(-sh - 1.5, handY + arm * 0.6); c.moveTo(sh - 0.3, shY + 1.9); c.lineTo(ax, ay); c.stroke();
-        circ(c, -sh - 1.6, handY + 0.9 + arm * 0.6, aw * 0.5, skin); circ(c, ax + 0.1, ay + (o.work ? -0.9 : 0.9), aw * 0.5, skin);
+        // arms: waving while she works, twirling her hair when smitten, folded when fuming
+        const aw = lerp(3.3, 2.5, k), handY = shY + torso * 0.8, arm = o.work ? Math.sin(t * 12) * 3 : sw * 2;
+        let ax = sh + 1.5, ay = handY - arm * 0.6, bx = -sh - 1.5, by = handY + arm * 0.6;
+        if (o.work) { ax = sh + 3.4; ay = shY - 1.6 + arm; }
+        else if (smit) { ax = sh - 0.6 + Math.sin(t * 6) * 0.6; ay = hc + hy * 0.5; }
+        else if (mad) { ax = -0.4; ay = shY + torso * 0.62; bx = 0.4; by = shY + torso * 0.66; }
+        c.strokeStyle = fit.sleeve || fit.top; c.lineWidth = aw;
+        c.beginPath(); c.moveTo(-sh + 0.3, shY + 1.9); c.lineTo(bx, by); c.moveTo(sh - 0.3, shY + 1.9); c.lineTo(ax, ay); c.stroke();
+        circ(c, bx - 0.1, by + 0.9, aw * 0.5, skin); circ(c, ax + 0.1, ay + (o.work ? -0.9 : 0.9), aw * 0.5, skin);
+        if (fit.bag) { c.strokeStyle = '#3A2430'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(-sh + 1, shY + 0.4); c.lineTo(sh + 0.8, hipY - 1.6); c.stroke(); rr(c, sh - 0.6, hipY - 3.4, 4, 3.4, 1, fit.bag); }
 
         // face: soft oval that narrows to the chin as `tall` goes up
         const chin = lerp(0.66, 0.4, k);
@@ -3053,25 +3138,35 @@
         c.bezierCurveTo(-hx, hc - hy * 1.05, hx, hc - hy * 1.05, hx, hc - hy * 0.1);
         c.bezierCurveTo(hx, hc + hy * 0.58, hx * chin, hc + hy, 0, hc + hy);
         c.bezierCurveTo(-hx * chin, hc + hy, -hx, hc + hy * 0.58, -hx, hc - hy * 0.1); c.closePath(); c.fill();
-        const ex = hx * 0.43, ey = hc + hy * 0.12, my = hc + hy * 0.62;
-        if (L.blush) { c.globalAlpha = L.blush * 0.5; ell(c, -hx * 0.5, ey + 3.1 * fs, 1.9 * fs, 1.1 * fs, '#FF8FA8'); ell(c, hx * 0.5, ey + 3.1 * fs, 1.9 * fs, 1.1 * fs, '#FF8FA8'); c.globalAlpha = 1; }
+        if (mad) { c.fillStyle = 'rgba(255,60,80,.34)'; c.fill(); }
+        const ex = hx * 0.43, ey = hc + hy * 0.12, my = hc + hy * 0.62, bl = smit ? 0.75 : L.blush;
+        if (bl) { c.globalAlpha = bl * 0.5; ell(c, -hx * 0.5, ey + 3.1 * fs, 1.9 * fs, 1.1 * fs, '#FF8FA8'); ell(c, hx * 0.5, ey + 3.1 * fs, 1.9 * fs, 1.1 * fs, '#FF8FA8'); c.globalAlpha = 1; }
         c.strokeStyle = ink; c.lineWidth = 0.75 * fs;
         for (const s of [-1, 1]) {
           const x = s * ex;
-          if (blink) { c.beginPath(); c.moveTo(x - s * 1.4 * fs, ey + 0.1); c.quadraticCurveTo(x, ey + 1.2 * fs, x + s * 1.6 * fs, ey - 0.1); c.lineTo(x + s * 2.3 * fs, ey - 0.7 * fs); c.stroke(); }
+          if (smit) { heart(c, x, ey + 0.4, 1.7 * fs * (1 + Math.sin(t * 8) * 0.12), '#FF4F8B'); continue; }
+          if (blink && !mad) { c.beginPath(); c.moveTo(x - s * 1.4 * fs, ey + 0.1); c.quadraticCurveTo(x, ey + 1.2 * fs, x + s * 1.6 * fs, ey - 0.1); c.lineTo(x + s * 2.3 * fs, ey - 0.7 * fs); c.stroke(); }
           else {
-            ell(c, x, ey, 1.35 * fs, 1.75 * fs, ink); circ(c, x + 0.5 * fs, ey - 0.65 * fs, 0.5 * fs, '#fff');
+            ell(c, x, ey + (mad ? 0.3 : 0), 1.35 * fs, (mad ? 1.3 : 1.75) * fs, ink); circ(c, x + 0.5 * fs, ey - 0.55 * fs, 0.5 * fs, '#fff');
             c.beginPath(); c.moveTo(x - s * 1.5 * fs, ey - 0.9 * fs); c.quadraticCurveTo(x, ey - 2.3 * fs, x + s * 1.6 * fs, ey - 0.9 * fs); c.lineTo(x + s * 2.4 * fs, ey - 1.75 * fs); c.stroke();
           }
         }
-        c.strokeStyle = '#5C3A2D'; c.lineWidth = 0.62 * fs;   // soft arched eyebrows
-        for (const s of [-1, 1]) { const x = s * ex; c.beginPath(); c.moveTo(x - s * 1.35 * fs, ey - 3.95 * fs); c.quadraticCurveTo(x + s * 0.5 * fs, ey - 4.75 * fs, x + s * 2.05 * fs, ey - 3.75 * fs); c.stroke(); }
+        c.strokeStyle = o.brow || '#5C3A2D'; c.lineWidth = (mad ? 0.85 : 0.62) * fs;
+        for (const s of [-1, 1]) {
+          const x = s * ex; c.beginPath();
+          if (mad) { c.moveTo(x - s * 1.5 * fs, ey - 2.6 * fs); c.lineTo(x + s * 2 * fs, ey - 4.2 * fs); }
+          else { c.moveTo(x - s * 1.35 * fs, ey - 3.95 * fs); c.quadraticCurveTo(x + s * 0.5 * fs, ey - 4.75 * fs, x + s * 2.05 * fs, ey - 3.75 * fs); }
+          c.stroke();
+        }
         c.strokeStyle = skinSh; c.lineWidth = 0.7; c.beginPath(); c.moveTo(-0.5, ey + 2.9 * fs); c.quadraticCurveTo(0, ey + 3.4 * fs, 0.5, ey + 2.9 * fs); c.stroke();
-        c.fillStyle = '#D9607C'; c.beginPath(); c.moveTo(-1.9 * fs, my); c.quadraticCurveTo(-0.9 * fs, my - 0.7 * fs, 0, my - 0.2 * fs); c.quadraticCurveTo(0.9 * fs, my - 0.7 * fs, 1.9 * fs, my); c.quadraticCurveTo(0, my + 2.1 * fs, -1.9 * fs, my); c.closePath(); c.fill();
-        c.strokeStyle = '#A83F5A'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(-1.9 * fs, my); c.quadraticCurveTo(0, my + 0.8 * fs, 1.9 * fs, my); c.stroke();
+        if (mad) { c.strokeStyle = '#A83F5A'; c.lineWidth = 0.85; c.beginPath(); c.moveTo(-1.7 * fs, my + 0.9); c.quadraticCurveTo(0, my - 0.5, 1.7 * fs, my + 0.9); c.stroke(); }
+        else {
+          c.fillStyle = '#D9607C'; c.beginPath(); c.moveTo(-1.9 * fs, my); c.quadraticCurveTo(-0.9 * fs, my - 0.7 * fs, 0, my - 0.2 * fs); c.quadraticCurveTo(0.9 * fs, my - 0.7 * fs, 1.9 * fs, my); c.quadraticCurveTo(0, my + 2.1 * fs, -1.9 * fs, my); c.closePath(); c.fill();
+          c.strokeStyle = '#A83F5A'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(-1.9 * fs, my); c.quadraticCurveTo(0, my + 0.8 * fs, 1.9 * fs, my); c.stroke();
+        }
 
         // fringe: swept from a side part, or curtains from a centre part
-        const px = L.part === 'side' ? hx * 0.3 : 0, side = L.part === 'side';
+        const px = o.fringe === 'side' ? hx * 0.3 : 0, side = o.fringe === 'side';
         c.fillStyle = hair; c.beginPath(); c.moveTo(px, hc - hy * 1.14);
         c.bezierCurveTo(-hx * 0.7, hc - hy * 1.32, -hx - 2.7, hc - hy * 0.75, -hx - 2.3, hc + hy * 0.15);
         c.bezierCurveTo(-hx - 1.7, hc + hy * 0.52, -hx - 0.2, hc + hy * 0.78, -hx + 0.5, hc + hy * 0.5);
@@ -3080,11 +3175,11 @@
         c.bezierCurveTo(hx * 0.8, hc - hy * 1.32, hx + 2.7, hc - hy * 0.75, hx + 2.3, hc + hy * 0.15);
         c.bezierCurveTo(hx + 1.7, hc + hy * 0.52, hx + 0.2, hc + hy * 0.78, hx - 0.5, hc + hy * 0.5);
         c.bezierCurveTo(hx - 0.3, hc - hy * 0.02, hx * (side ? 0.8 : 0.62), hc - hy * (side ? 0.62 : 0.5), px, hc - hy * 0.8); c.closePath(); c.fill();
-        if (o.outfit === 'pink') { const bx = hx * 0.82, by = hc - hy * 0.98; c.fillStyle = '#FF5FA2'; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx - 3.4, by - 2.4); c.lineTo(bx - 3, by + 2); c.closePath(); c.moveTo(bx, by); c.lineTo(bx + 3.4, by - 2); c.lineTo(bx + 3, by + 2.4); c.closePath(); c.fill(); circ(c, bx, by, 1.2, '#FFC2DC'); }
+        if (o.bow) { const bx2 = hx * 0.82, by2 = hc - hy * 0.98; c.fillStyle = '#FF5FA2'; c.beginPath(); c.moveTo(bx2, by2); c.lineTo(bx2 - 3.4, by2 - 2.4); c.lineTo(bx2 - 3, by2 + 2); c.closePath(); c.moveTo(bx2, by2); c.lineTo(bx2 + 3.4, by2 - 2); c.lineTo(bx2 + 3, by2 + 2.4); c.closePath(); c.fill(); circ(c, bx2, by2, 1.2, '#FFC2DC'); }
 
         // glasses
         const g = L.glasses, gy = ey - 0.2 * fs;
-        c.strokeStyle = L.frame; c.fillStyle = 'rgba(255,255,255,.12)';
+        c.strokeStyle = L.frame || '#1E1A22'; c.fillStyle = 'rgba(255,255,255,.12)';
         if (g === 'cateye') {
           c.lineWidth = 0.5 * fs;
           for (const s of [-1, 1]) {
@@ -3109,7 +3204,28 @@
           for (const s of [-1, 1]) { rr(c, s * 2.9 - 2.3, y - 1.5, 4.6, 3, 1.4, L.frame); c.globalAlpha = 0.35; rr(c, s * 2.9 - 1.6, y - 1, 1.6, 0.9, 0.45, '#fff'); c.globalAlpha = 1; }
           c.lineWidth = 0.8; c.beginPath(); c.moveTo(-0.7, y - 0.4); c.lineTo(0.7, y - 0.4); c.stroke();
         }
+        // steam when she is fuming
+        if (mad) {
+          c.strokeStyle = 'rgba(255,255,255,.95)'; c.lineWidth = 1.1;
+          for (const s of [-1, 1]) for (let i = 0; i < 2; i++) {
+            const ph = (t * 1.6 + i * 0.5) % 1, x0 = s * (hx + 1.5 + ph * 2), y0 = top + 3 - ph * 7;
+            c.globalAlpha = 1 - ph; c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(x0 + s * 1.6, y0 - 1.4, x0, y0 - 2.8); c.quadraticCurveTo(x0 - s * 1.6, y0 - 4.2, x0, y0 - 5.6); c.stroke();
+          }
+          c.globalAlpha = 1;
+        }
         c.restore();
+      }
+      // Jacqueline: long wavy dark-brown hair, cat-eye glasses, warm smile.
+      function drawJacqui(c, t, o = {}) {
+        const L = LOOKS[o.look] || LOOKS[CONFIG.look], fit = OUTFITS[o.outfit] || OUTFITS.cream;
+        drawGirl(c, t, Object.assign({}, o, { look: L, fringe: L.part, fit, bow: o.outfit === 'pink' }));
+      }
+      // Emma: Jacqui's best friend. Near-black waves, no glasses, and every pattern at once.
+      function drawEmma(c, t, o = {}) {
+        drawGirl(c, t, Object.assign({}, o, {
+          look: { tall: 1, glasses: 'none', blush: 0.2 }, hair: '#1C1416', hairLo: '#110C0E', fringe: 'centre', brow: '#2A1A1A',
+          fit: { top: PATTERNS.leopard || '#E9B96A', leg: PATTERNS.stripes || '#E8414F', shoe: '#E8414F', bag: PATTERNS.gingham || '#9DC3FF' },
+        }));
       }
 
       // Dennis: fluffy black cat, big yellow-green eyes. Origin = feet.
@@ -3389,15 +3505,15 @@
         const nb = D.state === 'nap' ? objById(D.napId) : null;
         list.push({ d: nb ? nb.x + nb.y + 1.05 : D.x + D.y + 0.02, dn: 1 });
         for (const cu of customers) list.push({ d: cu.x + cu.y, cu });
-        if (V) { list.push({ d: V.adam.x + V.adam.y + 0.015, ad: 1 }); list.push({ d: V.moose.x + V.moose.y + 0.012, mo: 1 }); }
+        if (V) for (const [w, key] of [[V.adam, 'ad'], [V.moose, 'mo'], [V.emma, 'em']]) if (w) list.push({ d: w.x + w.y + 0.013, [key]: 1, w });
         for (const id in PLOTS) if (plotBuyable(id)) list.push({ d: PLOTS[id].sign[0] + PLOTS[id].sign[1] + 1.2, sign: id });
         list.sort((a, b) => a.d - b.d);
         for (const it of list) {
           if (it.o) drawObject(c, it.o, t);
           else if (it.sign) drawPlotSign(c, it.sign, t);
           else if (it.cu) { const [x, y] = toW(it.cu.x, it.cu.y); c.save(); c.globalAlpha = clamp(it.cu.a, 0, 1); c.translate(x, y); drawFolk(c, it.cu.t, it.cu, it.cu.state !== 'visit'); c.restore(); }
-          else if (it.ad || it.mo) drawVisitor(c, it, t);
-          else if (it.j) { const [x, y] = toW(J.x, J.y); c.save(); c.translate(x, y - (J.hop > 0 ? Math.abs(Math.sin(J.hop * 13)) * 5 * Math.min(1, J.hop * 2) : 0)); { const k = 40 / jacquiHeight(); c.scale(k, k); } drawJacqui(c, J.t, { walk: J.state === 'walk', work: J.state === 'work', outfit: S.outfit, face: J.face }); c.restore(); }
+          else if (it.w) drawVisitor(c, it, t);
+          else if (it.j) { const [x, y] = toW(J.x, J.y); c.save(); c.translate(x, y - (J.hop > 0 ? Math.abs(Math.sin(J.hop * 13)) * 5 * Math.min(1, J.hop * 2) : 0)); { const k = 40 / jacquiHeight(); c.scale(k, k); } drawJacqui(c, J.t, { walk: J.state === 'walk', work: J.state === 'work', outfit: S.outfit, face: J.face, mood: J.mood }); c.restore(); }
           else {
             const [x, y] = toW(D.x, D.y);
             c.save(); c.translate(x, y - D.z); c.scale(0.96, 0.96);
@@ -3543,8 +3659,9 @@
 
       function toast(msg, o = {}) {
         const d = document.createElement('div');
-        d.className = 'toast' + (o.ach ? ' ach' : '');
-        if (o.ach) d.innerHTML = `${ICON.trophy}<div><b>${o.title}</b><small>${msg}</small></div>`; else d.textContent = msg;
+        d.className = 'toast' + (o.ach || o.img ? ' ach' : '') + (o.mode ? ' mode' : '');
+        if (o.img) d.innerHTML = `<img src="${o.img}" alt=""><div><b>${o.title}</b><small>${msg}</small></div>`;
+        else if (o.ach) d.innerHTML = `${ICON.trophy}<div><b>${o.title}</b><small>${msg}</small></div>`; else d.textContent = msg;
         ui.toasts.appendChild(d);
         while (ui.toasts.children.length > 3) ui.toasts.firstChild.remove();
         setTimeout(() => { d.classList.add('out'); setTimeout(() => d.remove(), 320); }, o.ach ? 4200 : 3400);
@@ -3791,7 +3908,7 @@
         renderSel(); renderSheet();
         if (placing && placing.kind === 'd' && !placing.moveId) updatePlaceBar();
       }
-      $('#charmBtn').addEventListener('click', () => { Snd.play('ui'); toast(`Town charm: ${totalCharm}. Decorations make nearby shops earn more and bring in visitors.`); });
+      $('#charmBtn').addEventListener('click', tapCharm);
       ui.dvdBtn.addEventListener('click', () => {
         Snd.play('ui');
         toast(S.dvd.found ? `Legally Blonde DVD: found! +${Math.round(CONFIG.dvd.incomeBonus * 100)}% income, forever.` : 'Legally Blonde DVD: still missing. ' + (S.dvd.fallback ? dvdHintText() : 'Tap around town and watch for pink sparkles.'));
@@ -3843,7 +3960,7 @@
       }
 
       /* =====================================================================
-         Adam and Moose — Jacqui's biggest fans drop by to flirt
+         Adam, Moose and Emma — the visitors
          ===================================================================== */
       // Adam: black beanie, ginger moustache, black crew neck, tan pants. Origin = feet.
       const ADAM = { leg: 15, torso: 14, hx: 7.6, hy: 8.2 };
@@ -3922,15 +4039,36 @@
         c.restore();
       }
 
+
       let V = null;                           // the visit in progress, if any
       let goodNews = null;                    // something Jacqui just did that deserves a kiss
       let talk = null;                        // dialogue on screen: { pages, i, shown }
+      const emmaFlirty = () => prefs.emma !== 'bestie';
+      const walkerAt = (st, dx) => ({ x: st.x + 0.5 + dx, y: st.y + 0.5, face: 1, path: [], t: rand(0, 5), a: 0, moving: false, repath: 0, say: null, sayT: 0 });
+      const endsByDistance = () => pathEnds().sort((p, q) => Math.hypot(q.x + 0.5 - J.x, q.y + 0.5 - J.y) - Math.hypot(p.x + 0.5 - J.x, p.y + 0.5 - J.y));
+      // Pages are [speaker, line, spoken to, effect]. Effects: 'crash' makes Jacqui fume, 'calm' settles her down.
       function startVisit(kind, line) {
         if (V || !shops().length || !running) return false;
-        const st = pathEnds().sort((p, q) => Math.hypot(q.x + 0.5 - J.x, q.y + 0.5 - J.y) - Math.hypot(p.x + 0.5 - J.x, p.y + 0.5 - J.y))[0], mk = dx => ({ x: st.x + 0.5 + dx, y: st.y + 0.5, face: 1, path: [], t: rand(0, 5), a: 0, moving: false, repath: 0, say: null, sayT: 0 });
-        const cfg = CONFIG.visits, first = !S.visits && kind === 'chat';
-        V = { kind, phase: 'in', t: 0, done: false, adam: mk(0), moose: mk(0.2), pages: [['adam', line || (first ? cfg.first : pick(cfg.lines))]] };
-        if (kind === 'chat' && (first || Math.random() < 0.6)) V.pages.push(['moose', pick(cfg.mooseLines)]);
+        const cfg = CONFIG.visits, ec = CONFIG.emma, ends = endsByDistance();
+        V = { kind, phase: 'in', t: 0, done: false, pages: [] };
+        if (kind === 'bestie') {
+          V.emma = walkerAt(ends[0], 0);
+          V.pages.push(['emma', pick(ec.bestieLines), 'Jacqui']);
+          if (Math.random() < 0.5) V.pages.push(['jacqui', pick(ec.jacquiBestie), 'Emma']);
+          return true;
+        }
+        const first = !S.visits && kind === 'chat', idx = first || line ? -1 : Math.floor(Math.random() * cfg.lines.length);
+        V.adam = walkerAt(ends[0], 0); V.moose = walkerAt(ends[0], 0.2);
+        V.pages.push(['adam', line || (first ? cfg.first : cfg.lines[idx]), 'Jacqui']);
+        if (!first && emmaFlirty() && Math.random() < (kind === 'kiss' ? ec.kissCrashChance : ec.crashChance)) {
+          V.emma = walkerAt(ends[1] || ends[0], -0.2);   // Emma crashes in from another street
+          if (kind === 'chat') {
+            V.pages.push(['emma', idx >= 0 && ec.counters[idx] && Math.random() < 0.5 ? ec.counters[idx] : pick(ec.flirts), 'Adam', 'crash']);
+            V.pages.push(['jacqui', pick(ec.jacquiMad), 'Emma']);
+            if (Math.random() < 0.4) V.pages.push(['moose', ec.mooseTraitor, 'Emma']);
+            V.pages.push(['adam', pick(ec.recovery), 'Jacqui', 'calm']);
+          }
+        } else if (kind === 'chat' && (first || Math.random() < 0.6)) V.pages.push(['moose', pick(cfg.mooseLines), 'Jacqui']);
         Snd.play('woof');
         return true;
       }
@@ -3941,77 +4079,99 @@
         if (w.moving) stepWalker(w, dt, speed);
       }
       function updateVisit(dt) {
-        const cfg = CONFIG.visits;
+        const cfg = CONFIG.visits, ec = CONFIG.emma;
         if (S.kissCd > 0) S.kissCd -= dt;
         if (!V) {
           if (!shops().length) return;
           S.visitT -= dt;
-          if (goodNews && S.kissCd <= 0 && !modalOpen) { if (startVisit('kiss', goodNews + ' ' + pick(cfg.kissLines))) { S.kissCd = cfg.kissCooldown; S.visitT = Math.max(S.visitT, cfg.minGap * 0.6); } goodNews = null; }
-          else if (S.visitT <= 0 && !modalOpen) { if (startVisit('chat')) S.visitT = rand(cfg.minGap, cfg.maxGap); }
+          if (!emmaFlirty()) S.emmaT -= dt;
+          if (modalOpen) return;
+          if (goodNews && S.kissCd <= 0) { if (startVisit('kiss', goodNews + ' ' + pick(cfg.kissLines))) { S.kissCd = cfg.kissCooldown; S.visitT = Math.max(S.visitT, cfg.minGap * 0.6); } goodNews = null; }
+          else if (S.visitT <= 0) { if (startVisit('chat')) S.visitT = rand(cfg.minGap, cfg.maxGap); }
+          else if (!emmaFlirty() && S.emmaT <= 0) { if (startVisit('bestie')) S.emmaT = rand(ec.bestieMin, ec.bestieMax); }
           return;
         }
-        const a = V.adam, m = V.moose; a.t += dt; m.t += dt; V.t += dt;
-        for (const w of [a, m]) if (w.sayT > 0) { w.sayT -= dt; if (w.sayT <= 0) w.say = null; }
-        if (V.phase !== 'out') { a.a = Math.min(1, a.a + dt * 3); m.a = a.a; }
+        const a = V.adam, m = V.moose, em = V.emma, lead = a || em, all = [a, m, em].filter(Boolean);
+        V.t += dt;
+        for (const w of all) {
+          w.t += dt;
+          if (w.sayT > 0) { w.sayT -= dt; if (w.sayT <= 0) w.say = null; }
+          if (V.phase !== 'out') w.a = Math.min(1, w.a + dt * 3);
+        }
+        if (V.phase === 'in' || V.phase === 'talk') {   // Moose and a gatecrashing Emma keep closing in on Adam
+          if (m) followWalker(m, a.x, a.y, dt, 3, true);
+          if (em && a) { followWalker(em, a.x, a.y, dt, 2.9, true); if (!em.moving) em.face = (a.x - em.x) - (a.y - em.y) >= 0 ? 1 : -1; }
+        }
         if (V.phase === 'in') {
-          followWalker(a, J.x, J.y, dt, 2.7, true);
-          followWalker(m, a.x, a.y, dt, 3, true);
-          if ((Math.hypot(J.x - a.x, J.y - a.y) < 1.35 && J.state !== 'walk') || V.t > 30) {
-            V.phase = 'talk'; V.t = 0; a.path = []; a.moving = false; m.path = []; m.moving = false;
+          followWalker(lead, J.x, J.y, dt, 2.7, true);
+          if ((Math.hypot(J.x - lead.x, J.y - lead.y) < 1.35 && J.state !== 'walk') || V.t > 30) {
+            V.phase = 'talk'; V.t = 0; lead.path = []; lead.moving = false;
             J.path = []; J.state = 'chat'; J.target = null;
-            const dir = (a.x - J.x) - (a.y - J.y) >= 0 ? 1 : -1; J.face = dir; a.face = -dir; m.face = -dir;
-            D.say = pick(['Hmph.', 'Mrrp.', '...']); D.sayT = 3;
+            const dir = (lead.x - J.x) - (lead.y - J.y) >= 0 ? 1 : -1; J.face = dir; lead.face = -dir; if (m) m.face = -dir;
+            if (a) { D.say = pick(['Hmph.', 'Mrrp.', '...']); D.sayT = 3; }
             openTalk(V.pages);
           }
         } else if (V.phase === 'talk') {
-          m.moving = false;
-          if (!talk || V.t > cfg.talkSeconds * V.pages.length + 4) { closeTalk(); V.phase = 'act'; V.t = 0; V.sx = a.x; V.sy = a.y; }
+          if (!talk || V.t > cfg.talkSeconds * V.pages.length + 6) { closeTalk(); V.phase = 'act'; V.t = 0; V.sx = lead.x; V.sy = lead.y; J.mood = null; }
         } else if (V.phase === 'act') {
-          // step in close, then the bum tap or the kiss
-          const k = clamp(V.t / 0.5, 0, 1), near = V.kind === 'kiss' ? 0.2 : 0.3;
-          const side = (V.sx - J.x) - (V.sy - J.y) >= 0 ? 1 : -1;
-          a.x = lerp(V.sx, J.x + side * near, k); a.y = lerp(V.sy, J.y - side * near, k); a.moving = k < 1;
+          // step in close, then the bum tap, the kiss, or a bestie hug
+          const side = (V.sx - J.x) - (V.sy - J.y) >= 0 ? 1 : -1, kk = clamp(V.t / 0.5, 0, 1), near = V.kind === 'kiss' ? 0.2 : 0.3;
+          lead.x = lerp(V.sx, J.x + side * near, kk); lead.y = lerp(V.sy, J.y - side * near, kk); lead.moving = kk < 1;
           if (V.t > 0.6 && !V.done) {
             V.done = true; J.hop = 0.7;
+            const cx = (lead.x + J.x) / 2, cy = (lead.y + J.y) / 2;
             if (V.kind === 'kiss') {
               S.kisses = (S.kisses || 0) + 1;
-              burst('heart', (a.x + J.x) / 2, (a.y + J.y) / 2, 16, { z: 34, spread: 12 }); floatText((a.x + J.x) / 2, (a.y + J.y) / 2, 52, 'Mwah!', '#EA5F9E', 15); Snd.play('kiss');
+              burst('heart', cx, cy, 16, { z: 34, spread: 12 }); floatText(cx, cy, 52, 'Mwah!', '#EA5F9E', 15); Snd.play('kiss');
+              if (em) { em.say = pick(ec.kissCrash); em.sayT = 3; }
+            } else if (V.kind === 'bestie') {
+              burst('heart', cx, cy, 8, { z: 30, spread: 10 }); floatText(cx, cy, 50, 'Besties!', '#9C80E0', 13); Snd.play('pop');
             } else {
               burst('heart', J.x, J.y, 5, { z: 20, spread: 6 }); floatText(J.x, J.y, 46, 'Cheeky bum tap!', '#EA5F9E', 11); Snd.play('pop');
             }
           }
-          if (V.t > 1.9) {
+          if (V.t > (em && V.kind === 'kiss' ? 2.8 : 1.9)) {
             const gift = Math.max(cfg.giftMin, totalIncome() * cfg.giftSeconds);
             earn(gift); floatText(J.x, J.y, 34, '+' + fmt(gift), '#E3A92A', 13);
-            toast(V.kind === 'kiss' ? `Adam's kiss left Jacqui glowing. +${fmt(gift)} coins.` : `Adam and Moose made Jacqui's day. +${fmt(gift)} coins.`);
-            S.visits = (S.visits || 0) + 1;
-            J.state = 'idle'; J.idleT = rand(4, 8);
-            const e = pick(pathEnds()); a.path = pathToTile(a, e.x, e.y) || []; a.say = pick(cfg.byeLines); a.sayT = 2.6;
+            toast(V.kind === 'kiss' ? `Adam's kiss left Jacqui glowing. +${fmt(gift)} coins.` : V.kind === 'bestie' ? `Emma shouted Jacqui a coffee. +${fmt(gift)} coins.` : em ? `Adam only had eyes for Jacqui. +${fmt(gift)} coins.` : `Adam and Moose made Jacqui's day. +${fmt(gift)} coins.`);
+            if (a) S.visits = (S.visits || 0) + 1;
+            J.state = 'idle'; J.idleT = rand(4, 8); J.mood = null;
+            const ends = endsByDistance();
+            if (a) { a.path = pathToTile(a, ends[0].x, ends[0].y) || []; a.say = pick(cfg.byeLines); a.sayT = 2.6; }
+            if (em) { const e = a ? ends[1] || ends[0] : ends[0]; em.path = pathToTile(em, e.x, e.y) || []; if (!em.say) { em.say = pick(a ? ec.exitLines : ec.bestieBye); em.sayT = 2.8; } }
             V.phase = 'out'; V.t = 0; checkAchievements(); save();
           }
         } else {
-          a.moving = a.path.length > 0;
-          const gone = stepWalker(a, dt, 2.5);
-          followWalker(m, a.x, a.y, dt, 3, false);
-          if (a.path.length <= 1 || V.t > 25) { a.a -= dt * 2.2; m.a = a.a; }
-          if ((gone && a.a <= 0) || a.a <= 0) V = null;
+          let alive = false;
+          for (const w of all) {
+            if (w === m) { followWalker(m, a.x, a.y, dt, 3, false); m.a = a.a; }
+            else {
+              w.moving = w.path.length > 0; stepWalker(w, dt, w === em ? 2.6 : 2.5);
+              if (w.path.length <= 1 || V.t > 25) w.a -= dt * 2.2;
+            }
+            if (w.a > 0) alive = true;
+          }
+          if (!alive) V = null;
         }
       }
       function drawVisitor(c, it, t) {
-        const w = it.ad ? V.adam : V.moose, [x, y] = toW(w.x, w.y), k = 40 / jacquiHeight();
+        const w = it.w, [x, y] = toW(w.x, w.y), k = 40 / jacquiHeight();
         c.save(); c.globalAlpha = clamp(w.a, 0, 1); c.translate(x, y);
-        if (it.ad) { c.scale(k, k); drawAdam(c, w.t, { walk: w.moving, face: w.face, reach: V.phase === 'act' && V.kind !== 'kiss' && V.t > 0.35 && V.t < 1.3, wink: V.phase === 'out' && V.t < 1.2 }); }
+        if (it.ad) { c.scale(k, k); drawAdam(c, w.t, { walk: w.moving, face: w.face, reach: V.phase === 'act' && V.kind === 'chat' && V.t > 0.35 && V.t < 1.3, wink: V.phase === 'out' && V.t < 1.2 }); }
+        else if (it.em) { c.scale(k, k); drawEmma(c, w.t, { walk: w.moving, face: w.face, mood: V.kind !== 'bestie' && (V.phase === 'talk' || V.phase === 'act') ? 'smitten' : null }); }
         else { c.scale(0.92, 0.92); drawMoose(c, w.t, { mode: w.moving ? 'walk' : 'sit', face: w.face, happy: true }); }
         c.restore();
-        if (w.say && w.a > 0.5) drawBubble(c, x, y - (it.ad ? 47 : 27), w.say);
+        if (w.say && w.a > 0.5) drawBubble(c, x, y - (it.mo ? 27 : 47), w.say);
       }
       function tapVisitor(wx, wy) {
         if (!V) return false;
-        for (const [w, h, ad] of [[V.moose, 12, 0], [V.adam, 24, 1]]) {
+        for (const [w, h, tall] of [[V.moose, 12, 0], [V.emma, 24, 1], [V.adam, 24, 1]]) {
+          if (!w) continue;
           const [x, y] = toW(w.x, w.y);
-          if (Math.hypot(wx - x, (wy - (y - h)) * (ad ? 0.6 : 1)) < 15) {
-            if (ad) { w.say = pick(CONFIG.visits.tapLines); w.sayT = 2; Snd.play('ui'); }
-            else { w.say = 'Woof!'; w.sayT = 1.6; Snd.play('woof'); burst('heart', w.x, w.y, 4, { z: 18, spread: 6 }); }
+          if (Math.hypot(wx - x, (wy - (y - h)) * (tall ? 0.6 : 1)) < 15) {
+            if (w === V.moose) { w.say = 'Woof!'; w.sayT = 1.6; Snd.play('woof'); burst('heart', w.x, w.y, 4, { z: 18, spread: 6 }); }
+            else if (w === V.emma) { w.say = pick(V.adam ? CONFIG.emma.tapFlirty : CONFIG.emma.tapBestie); w.sayT = 2; Snd.play('ui'); }
+            else { w.say = pick(CONFIG.visits.tapLines); w.sayT = 2; Snd.play('ui'); }
             return true;
           }
         }
@@ -4020,43 +4180,78 @@
       function cheer(reason) { if (!goodNews) goodNews = reason; }
 
       /* ---------- the conversation pop-up ---------- */
-      function drawTalkFace(who, t) {
-        const c = $('#talkFace').getContext('2d');
+      const SPEAKERS = { adam: 'Adam', moose: 'Moose', emma: 'Emma', jacqui: 'Jacqui' };
+      function drawFace(c, who, t, emmaMood) {
         c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, 144, 144);
         c.save(); c.beginPath(); c.arc(72, 72, 70, 0, TAU); c.clip();
-        c.fillStyle = who === 'adam' ? '#DDEBFF' : '#FFF1D6'; c.fillRect(0, 0, 144, 144);
+        c.fillStyle = { adam: '#DDEBFF', moose: '#FFF1D6', emma: '#FFE3F0', jacqui: '#F3EAFF' }[who]; c.fillRect(0, 0, 144, 144);
         if (who === 'adam') { const s = 6.2; c.translate(72, 86 - ADAM.hc * s); c.scale(s, s); drawAdam(c, t, {}); }
-        else { const s = 6.4; c.translate(72 - 0.6 * s, 84 + 19.6 * s); c.scale(s, s); drawMoose(c, t, { mode: 'sit', happy: true }); }
+        else if (who === 'moose') { const s = 6.4; c.translate(72 - 0.6 * s, 84 + 19.6 * s); c.scale(s, s); drawMoose(c, t, { mode: 'sit', happy: true }); }
+        else {
+          const s = 6.6, hc = -(13 + 12.5 + 0.6 + 8.4 * 0.94); c.translate(72, 84 - hc * s); c.scale(s, s);
+          if (who === 'jacqui') drawJacqui(c, t, { outfit: S.outfit, mood: J.mood });
+          else drawEmma(c, t, { mood: emmaMood !== undefined ? emmaMood : V && V.adam ? 'smitten' : null });
+        }
         c.restore();
       }
+      const drawTalkFace = (who, t) => drawFace($('#talkFace').getContext('2d'), who, t);
+      function applyPageFx(page) {
+        if (page[3] === 'crash') { J.mood = 'mad'; D.say = 'Hsss!'; D.sayT = 3; Snd.play('nope'); }
+        else if (page[3] === 'calm') { J.mood = null; J.hop = 0.5; }
+      }
       function openTalk(pages) {
-        talk = { pages, i: 0, shown: 0 };
+        talk = { pages, i: 0, shown: 0 }; applyPageFx(pages[0]);
         $('#talk').classList.remove('hide'); renderTalk(); renderSel(); renderHint();
       }
       function renderTalk() {
         if (!talk) return;
-        const [who, text] = talk.pages[talk.i];
-        $('#talkName').textContent = who === 'adam' ? 'Adam' : 'Moose';
-        $('#talkTo').textContent = 'to Jacqui';
+        const [who, text, to] = talk.pages[talk.i], last = talk.i === talk.pages.length - 1;
+        $('#talkName').textContent = SPEAKERS[who];
+        $('#talkTo').textContent = 'to ' + (to || 'Jacqui');
         $('#talkText').textContent = text.slice(0, Math.floor(talk.shown));
-        $('#talkMore').textContent = talk.shown < text.length ? '' : talk.i < talk.pages.length - 1 ? 'Tap for more' : 'Tap to blush and carry on';
+        $('#talkMore').textContent = talk.shown < text.length ? '' : !last ? 'Tap for more' : who === 'adam' ? 'Tap to blush and carry on' : 'Tap to carry on';
       }
       function tickTalk(dt, t) {
         if (!talk) return;
         const [who, text] = talk.pages[talk.i], before = Math.floor(talk.shown);
-        if (talk.shown < text.length) { talk.shown = Math.min(text.length, talk.shown + dt * 38); if (Math.floor(talk.shown) !== before) { renderTalk(); if (Math.floor(talk.shown) % 3 === 0) Snd.tone(who === 'adam' ? 190 + Math.random() * 40 : 320 + Math.random() * 80, 0.04, { type: 'triangle', vol: 0.035 }); } }
-        else { talk.hold = (talk.hold || 0) + dt; if (talk.hold > CONFIG.visits.talkSeconds) nextTalk(); }
+        if (talk.shown < text.length) {
+          talk.shown = Math.min(text.length, talk.shown + dt * 38);
+          if (Math.floor(talk.shown) !== before) { renderTalk(); if (Math.floor(talk.shown) % 3 === 0) Snd.tone({ adam: 200, moose: 340, emma: 520, jacqui: 430 }[who] + Math.random() * 50, 0.04, { type: 'triangle', vol: 0.035 }); }
+        } else { talk.hold = (talk.hold || 0) + dt; if (talk.hold > CONFIG.visits.talkSeconds) nextTalk(); }
         drawTalkFace(who, t);
       }
       function nextTalk() {
         if (!talk) return;
         const text = talk.pages[talk.i][1];
         if (talk.shown < text.length) { talk.shown = text.length; renderTalk(); return; }
-        if (talk.i < talk.pages.length - 1) { talk.i++; talk.shown = 0; talk.hold = 0; if (talk.pages[talk.i][0] === 'moose') Snd.play('woof'); renderTalk(); }
-        else closeTalk();
+        if (talk.i < talk.pages.length - 1) {
+          talk.i++; talk.shown = 0; talk.hold = 0;
+          const p = talk.pages[talk.i]; applyPageFx(p);
+          if (p[0] === 'moose') Snd.play('woof');
+          renderTalk();
+        } else closeTalk();
       }
       function closeTalk() { if (!talk) return; talk = null; $('#talk').classList.add('hide'); renderSel(); renderHint(); }
       $('#talk').addEventListener('click', () => { Snd.play('tap'); nextTalk(); });
+
+      /* ---------- secret switch: tap the charm heart 8 times to flip Emma between flirty and bestie ---------- */
+      let charmTaps = 0, charmLast = 0;
+      function tapCharm() {
+        const now = performance.now();
+        if (now - charmLast > 1500) charmTaps = 0;
+        charmLast = now; charmTaps++;
+        Snd.play('ui');
+        if (charmTaps === 1) toast(`Town charm: ${totalCharm}. Decorations make nearby shops earn more and bring in visitors.`);
+        if (charmTaps < CONFIG.emma.toggleTaps) return;
+        charmTaps = 0;
+        prefs.emma = emmaFlirty() ? 'bestie' : 'flirty'; savePrefs();
+        const fl = emmaFlirty();
+        if (fl) S.visitT = Math.min(S.visitT, CONFIG.visits.returnDelay); else S.emmaT = Math.min(S.emmaT, CONFIG.emma.bestieReturn);
+        const cv = document.createElement('canvas'); cv.width = cv.height = 144;
+        drawFace(cv.getContext('2d'), 'emma', 0.5, fl ? 'smitten' : null);
+        Snd.play(fl ? 'kiss' : 'ach');
+        toast(fl ? 'She will crash every one of Adam\'s visits.' : 'She will just come and hang out with Jacqui.', { img: cv.toDataURL(), title: fl ? 'Emma mode: Flirty' : 'Emma mode: Bestie', mode: true });
+      }
 
       /* =====================================================================
          Offline earnings, screens and boot
@@ -4093,7 +4288,12 @@
         sel = null; placing = null; sheetKind = null; lastSelHTML = ''; ui.sel.innerHTML = ''; V = null; goodNews = null; closeTalk();
         refreshWorld(); spawnCast(); fitCamera();
         unlockSeen = CONFIG.buildings.filter(b => S.lifetime >= b.unlockAt).length; buildNudge = 0;
-        const start = () => { running = true; lastT = performance.now(); Snd.music(true); updateHud(); renderHint(); save(); };
+        const start = () => {
+          running = true; lastT = performance.now();
+          if (S.visits > 0) S.visitT = Math.min(S.visitT, CONFIG.visits.returnDelay);   // a returning player gets a visit soon
+          if (!emmaFlirty()) S.emmaT = Math.min(S.emmaT, CONFIG.emma.bestieReturn);
+          Snd.music(true); updateHud(); renderHint(); save();
+        };
         if (!S.missionSeen) { updateHud(); showMission(() => { S.missionSeen = true; start(); }); return; }
         const gap = (Date.now() - S.lastSeen) / 1000;
         const away = gap >= CONFIG.offline.minSeconds ? applyAway(gap) : null;
@@ -4165,6 +4365,7 @@
         if (!(dt > 0)) dt = 0;
         if (dt > 1) dt = 1;
         gameT += dt;
+        if (window.innerWidth !== W || window.innerHeight !== H) resize();   // catches missed resize events (rotation, browser chrome)
         if (running) {
           for (let rem = dt; rem > 1e-6;) { const st = Math.min(rem, 0.05); update(st); rem -= st; }
           tickTalk(dt, gameT);
@@ -4185,12 +4386,13 @@
         ui.dvdBtn.title = 'Legally Blonde DVD';
         let i = 0;
         $('#logoWords').innerHTML = 'Dream Town'.split(' ').map(w => `<span class="w">${w.split('').map(ch => `<span class="ch" style="--i:${i++}">${ch}</span>`).join('')}</span>`).join('');
+        initPatterns();
         S = load() || newState();
         if (S.dvd.spot.kind === 'deco' && !S.dvd.found && !S.objects.some(o => o.id === S.dvd.spot.id)) S.dvd.spot = { kind: 'building', type: 'cafe' };
         resize(); fitCamera(); refreshWorld(); spawnCast();
         syncSoundBtn(); drawSilhouettes(); showTitle();
         if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawSilhouettes);
-        if (location.hash === '#debug') window.JDT = { get S() { return S; }, CONFIG, earn, save, refreshWorld, update, startVisit, cheer, get V() { return V; }, tickEconomy, applyAway, showAway, win, dennisLead, dennisWander, dvdTile, handleTap, toW, cam, get D() { return D; }, get J() { return J; }, get customers() { return customers; }, get running() { return running; }, findDVD: () => { const t = dvdTile() || { x: 5, y: 5 }; findDVD(t.x, t.y); } };
+        if (location.hash === '#debug') window.JDT = { get S() { return S; }, CONFIG, earn, save, refreshWorld, update, startVisit, cheer, tapCharm, prefs, get V() { return V; }, tickEconomy, applyAway, showAway, win, dennisLead, dennisWander, dvdTile, handleTap, toW, cam, get D() { return D; }, get J() { return J; }, get customers() { return customers; }, get running() { return running; }, findDVD: () => { const t = dvdTile() || { x: 5, y: 5 }; findDVD(t.x, t.y); } };
         requestAnimationFrame(frame);
       }
       boot();
